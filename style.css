@@ -1,0 +1,143 @@
+*{
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+}
+nav{
+    height: 100px;
+    width: 100%;
+    background-color: #572c6d;
+    border-radius: 5px;
+    padding: 10px;
+
+}
+.links{
+    display: flex;
+    gap:50px;
+    padding-left: 500px;
+    
+
+}
+.links a{
+    color: white;
+    text-decoration: none;
+}
+nav{
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    padding-left: 30px;
+    gap: 300px;
+    border-radius: 10px;
+    
+}
+.logo{
+    display: flex;
+    align-items: center;
+    gap:3px;
+}
+.left{
+    height: 600px;
+    width: 40%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+    border-radius:50px ;
+    
+    
+}
+.right{
+
+    height:600px;
+    width: 60%;
+    background-color: #572c6d;
+    border-radius: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    font-family: tahoma;
+    font-size: 20px;
+    flex-direction: column;
+    padding: 50px; 
+
+}
+.right .getbutton{
+    margin-top: 20px;
+    height: 50px;
+    width: 100px;
+    background-color:#83368b;
+    color: white;
+    border-radius: 15px;
+    font-size: 15px;
+    font-family: tahoma;
+    
+}
+.right h1{
+    font-size: 70px;
+    color: white;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    
+}
+.right p{
+    color: white;
+    font-family: Tahoma;
+    font-weight: 100;
+}
+.title{
+    width: 400px;
+    font-size: 20px;
+    font-family: Tahoma;
+    padding-right: 100px;
+    padding-left: 20px;
+    color: rgb(255, 255, 255);
+    
+}
+.main{
+    padding-top: 50px;
+    display: flex;
+    background-color:#e5dce6;
+    height: 850px;
+    gap: 30px;
+    padding-left: 10px;
+    padding-right: 10px;
+    
+}
+.input{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 300px;
+}
+form input{
+    height: 40px;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 20px;
+}
+.register{
+    height: 700px;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 30px;   
+    
+}
+.button{
+    background-color: #f0f0f0;
+    height: 30px;
+    width: 150px;
+    margin-top: 23px;
+    border-radius: 10px;
+}
+.register-form{
+    background-color: rgb(255, 255, 255);
+    border: 1px solid black;
+    padding: 30px;
+    border-radius: 10px;
+    font-family: tahoma;
+}
+.regmain{
+    background-color:#e5dce6;
+}
+
