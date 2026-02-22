@@ -7,7 +7,7 @@
 nav {
   height: 100px;
   width: 100%;
-  background-color: #572c6d;
+  background-color: #35779f;
   border-radius: 5px;
   padding: 10px;
 }
@@ -15,6 +15,7 @@ nav {
   display: flex;
   gap: 50px;
   padding-left: 500px;
+  font-family: taho;
 }
 .links a {
   color: white;
@@ -47,13 +48,13 @@ nav {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #ffffff;
+  /* background-color: #ffffff; */
   border-radius: 50px;
 }
 .right {
   height: 600px;
   width: 60%;
-  background-color: #572c6d;
+  /* background-color: #35779f; */
   border-radius: 50px;
   display: flex;
   justify-content: center;
@@ -67,8 +68,8 @@ nav {
   margin-top: 20px;
   height: 50px;
   width: 100px;
-  background-color: #83368b;
-  color: white;
+  background-color: rgb(255, 255, 255);
+  color: rgb(27, 162, 224);
   border-radius: 15px;
   font-size: 15px;
   font-family: tahoma;
@@ -83,13 +84,16 @@ nav {
 
 .right h1 {
   font-size: 70px;
-  color: white;
+  color: #35779f;
   font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
 .right p {
-  color: white;
+  width: 850px;
+  color: #35779f;
   font-family: Tahoma;
   font-weight: 100;
+  margin-top: 10px;
+  font-size: 30px;
 }
 .title {
   width: 400px;
@@ -102,7 +106,7 @@ nav {
 .main {
   padding-top: 50px;
   display: flex;
-  background-color: #e5dce6;
+  /* background-color: #f9f7d1; */
   height: 850px;
   gap: 30px;
   padding-left: 10px;
@@ -111,8 +115,12 @@ nav {
 .input {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 20px;
   width: 300px;
+  margin: 5px;
+}
+.input label{
+  margin-top: 10px;
 }
 form input {
   height: 40px;
@@ -123,13 +131,12 @@ form input {
 /* REGISTER PAGE  */
 
 .register {
-  height: 830px;
-  width: 100%;
+  min-height: 100vh;
+  width: auto;
   justify-content: center;
   display: flex;
   align-items: center;
   gap: 30px;
-  background-color: #e5dce6;
 }
 .button {
   background-color: #f0f0f0;
@@ -140,10 +147,13 @@ form input {
 }
 .register-form {
   background-color: rgb(255, 255, 255);
-  border: 1px solid black;
   padding: 30px;
   border-radius: 10px;
   font-family: tahoma;
+  border:none;
+}
+.register-form h1{
+  text-align: center;
 }
 
 /* LOG IN PAGE */
@@ -163,18 +173,26 @@ form input {
   text-align: center;
 }
 .login-form {
+  height: 500px;
   padding: 40px;
-  width: 100%;
+  width: auto;
   max-width: 400px;
   background-color: rgb(255, 255, 255);
   border: 1px none black;
   font-family: tahoma;
   border-radius: 12px;
 }
-.login-header h1 {
+.login-form h1 {
   margin-bottom: 30px;
   color: #000000;
-  font-size: 40px;
+  font-size: 30px;
+  text-align: center;
+}
+.actions{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 .actions .button {
   background-color: rgb(27, 162, 224);
@@ -182,7 +200,6 @@ form input {
   font-family: Tahoma;
   font-weight: 3px;
   color: white;
-  margin-top: 10px;
   border: none;
   cursor: pointer;
 }
