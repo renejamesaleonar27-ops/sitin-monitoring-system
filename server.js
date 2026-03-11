@@ -1,0 +1,121 @@
+const express = require('express');
+const initSqlJs = require('sql.js');
+const bcrypt = require('bcryptjs');
+const path = require('path');
+const fs = require('fs');
+
+const app = express();
+const PORT = 3000;
+
+// --- Middleware ---
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname)));
+
+const DB_PATH = path.join(__dirname, 'sitin.db');
+
+async function startServer() {
+    // Initialize sql.js
+    const SQL = await initSqlJs();
+
+    // Load existing database or create a new one
+    let db;
+    if (fs.existsSync(DB_PATH)) {
+        const fileBuffer = fs.readFileSync(DB_PATH);
+        db = new SQL.Database(fileBuffer);
+    } else {
+        db = new SQL.Database();
+    }
+
+    // Helper function to save database to file
+    function saveDatabase() {
+        const data = db.export();
+        const buffer = Buffer.from(data);
+        fs.writeFileSync(DB_PATH, buffer);
+    }
+
+    // --- Create the users table ---
+    db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            idnumber    TEXT    NOT NULL UNIQUE,
+            lastname    TEXT    NOT NULL,
+            firstname   TEXT    NOT NULL,
+            middlename  TEXT,
+            courselevel TEXT    NOT NULL,
+            course      TEXT    NOT NULL,
+            address     TEXT,
+            email       TEXT    NOT NULL UNIQUE,
+            username    TEXT    NOT NULL UNIQUE,
+            password    TEXT    NOT NULL,
+            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    saveDatabase();
+    console.log('Users table ready.');
+
+    // --- Registration Route ---
+    app.post('/register', (req, res) => {
+        const {
+            idnumber, lastname, firstname, middlename,
+            courselevel, course, address, email, username, password
+        } = req.body;
+
+        // Hash the password
+        const hashedPassword = bcrypt.hashSync(password, 10);
+
+        try {
+            db.run(
+                `INSERT INTO users (idnumber, lastname, firstname, middlename, courselevel, course, address, email, username, password)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [idnumber, lastname, firstname, middlename, courselevel, course, address, email, username, hashedPassword]
+            );
+            saveDatabase();
+            console.log('New user registered:', username);
+            res.redirect('/login.html');
+        } catch (err) {
+            if (err.message.includes('UNIQUE constraint failed')) {
+                res.status(400).send('Registration failed: ID Number, Email, or Username already exists.');
+            } else {
+                res.status(500).send('Registration failed: ' + err.message);
+            }
+        }
+    });
+
+    // --- Login Route ---
+    app.post('/login', (req, res) => {
+        const { username, password } = req.body;
+
+        try {
+            const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
+            stmt.bind([username]);
+
+            if (stmt.step()) {
+                const user = stmt.getAsObject();
+                stmt.free();
+
+                // Compare entered password with hashed password
+                const isMatch = bcrypt.compareSync(password, user.password);
+
+                if (!isMatch) {
+                    return res.status(401).send('Login failed: Incorrect password.');
+                }
+
+                // Login successful
+                res.redirect('/main.html');
+            } else {
+                stmt.free();
+                res.status(401).send('Login failed: User not found.');
+            }
+        } catch (err) {
+            res.status(500).send('Login failed: ' + err.message);
+        }
+    });
+
+    // --- Start the Server ---
+    app.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}`);
+    });
+}
+
+startServer();

@@ -30,63 +30,54 @@ background-position: center;">
     <div class="regmain">
 
     </div>
-    <section class="register">
-            
-            <form class="register-form">
+<section class="register">
+    <form class="register-form" action="/register" method="POST">
 
-                <h1 style="margin-bottom:20px ;">Register  Account</h1>
-                <div class="input">
-                    <label for="idnumber">ID Number</label>
-                    <input type="text" id="idnumber" placeholder="ID Number">
-                </div>
-                <div class="input">
-                    <label for="lastname">Last Name</label>
-                    <input type="text" id="lastname" placeholder="Last Name">
-                </div>
-                <div class="input">
-                    <label for="firstname">First Name</label>
-                    <input type="text" id="firstname" placeholder="First Name">
-                </div>
-                 <div class="input">
-                    <label for="middlename">Middle Name</label>
-                    <input type="text" id="middlename" placeholder="Middle Name">
-                </div>
-                <div class="input">
-                    <label for="courselevel">Course Level</label>
-                    <input type="text" id="courselevel" placeholder="Course Level">
-                </div>
-                <div class="actions">
-                  
-                
-                </div>
-            </form>
-               <form class="register-form">
+        <h1 style="margin-bottom:20px;">Register Account</h1>
+        <div class="input">
+            <label for="idnumber">ID Number</label>
+            <input type="text" id="idnumber" name="idnumber" placeholder="ID Number" required>
+        </div>
+        <div class="input">
+            <label for="lastname">Last Name</label>
+            <input type="text" id="lastname" name="lastname" placeholder="Last Name" required>
+        </div>
+        <div class="input">
+            <label for="firstname">First Name</label>
+            <input type="text" id="firstname" name="firstname" placeholder="First Name" required>
+        </div>
+        <div class="input">
+            <label for="middlename">Middle Name</label>
+            <input type="text" id="middlename" name="middlename" placeholder="Middle Name">
+        </div>
+        <div class="input">
+            <label for="courselevel">Course Level</label>
+            <input type="text" id="courselevel" name="courselevel" placeholder="Course Level" required>
+        </div>
+        <div class="input">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="Email" required>
+        </div>
+          <div class="input">
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" placeholder="Address">
+        </div>
+        <div class="input">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Password" required>
+        </div>
+        <div class="input">
+            <label for="reppassword">Repeat your password</label>
+            <input type="password" id="reppassword" placeholder="Repeat your password" required>
+        </div>
+        <div class="actions">
+            <button class="button" type="submit">Register</button>
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+        </div>
 
-                <div class="input">
-                    <label for="courselevel">Course</label>
-                    <input type="text" id="course" placeholder="Course">
-                </div>
-                <div class="input">
-                    <label for="address">Address</label>
-                    <input type="text" id="address" placeholder="Address">
-                </div>
-                <div class="input">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="Email">
-                </div>
-                 <div class="input">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Password">
-                </div>
-                <div class="input">
-                    <label for="reppassword">Repeat your password</label>
-                    <input type="password" id="reppassword" placeholder="Repeat your password">
-                </div>
-                <div class="actions">
-    <button class="button">Register</button>
-</div>
-
-            </form>
+    </form>
+</section>
+>
             
         </section>
 </body>
