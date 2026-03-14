@@ -35,8 +35,9 @@ async function startServer() {
     }
 
     // --- Create the users table ---
+    db.run(`DROP TABLE IF EXISTS users`);
     db.run(`
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE users (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             idnumber    TEXT    NOT NULL UNIQUE,
             lastname    TEXT    NOT NULL,
@@ -46,7 +47,6 @@ async function startServer() {
             course      TEXT    NOT NULL,
             address     TEXT,
             email       TEXT    NOT NULL UNIQUE,
-            username    TEXT    NOT NULL UNIQUE,
             password    TEXT    NOT NULL,
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -58,37 +58,43 @@ async function startServer() {
     app.post('/register', (req, res) => {
         const {
             idnumber, lastname, firstname, middlename,
-            courselevel, course, address, email, username, password
+            courselevel, course, address, email, password
         } = req.body;
 
         // Hash the password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
+        // Convert undefined/null to empty strings
+        const middleName = middlename || '';
+        const userAddress = address || '';
+
         try {
             db.run(
-                `INSERT INTO users (idnumber, lastname, firstname, middlename, courselevel, course, address, email, username, password)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [idnumber, lastname, firstname, middlename, courselevel, course, address, email, username, hashedPassword]
+                `INSERT INTO users (idnumber, lastname, firstname, middlename, courselevel, course, address, email, password)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [idnumber, lastname, firstname, middleName, courselevel, course, userAddress, email, hashedPassword]
             );
             saveDatabase();
-            console.log('New user registered:', username);
+            console.log('New user registered:', idnumber);
             res.redirect('/login.html');
         } catch (err) {
-            if (err.message.includes('UNIQUE constraint failed')) {
-                res.status(400).send('Registration failed: ID Number, Email, or Username already exists.');
+            console.error('Registration error:', err);
+            const errorMessage = err.message || err.toString() || 'Unknown error';
+            if (errorMessage.includes('UNIQUE constraint failed')) {
+                res.status(400).send('Registration failed: ID Number or Email already exists.');
             } else {
-                res.status(500).send('Registration failed: ' + err.message);
+                res.status(500).send('Registration failed: ' + errorMessage);
             }
         }
     });
 
     // --- Login Route ---
     app.post('/login', (req, res) => {
-        const { username, password } = req.body;
+        const { idnumber, password } = req.body;
 
         try {
-            const stmt = db.prepare('SELECT * FROM users WHERE username = ?');
-            stmt.bind([username]);
+            const stmt = db.prepare('SELECT * FROM users WHERE idnumber = ?');
+            stmt.bind([idnumber]);
 
             if (stmt.step()) {
                 const user = stmt.getAsObject();
@@ -105,7 +111,7 @@ async function startServer() {
                 res.redirect('/main.html');
             } else {
                 stmt.free();
-                res.status(401).send('Login failed: User not found.');
+                res.status(401).send('Login failed: ID Number not found.');
             }
         } catch (err) {
             res.status(500).send('Login failed: ' + err.message);
