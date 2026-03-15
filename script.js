@@ -1,3 +1,3 @@
-function goToRegister(){
-    location.href = "registration.html";
+function goToMain(){
+    location.href = "main.html";
 }

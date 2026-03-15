@@ -105,13 +105,12 @@ nav {
   color: rgb(255, 255, 255);
 }
 .main {
-  padding-top: 50px;
+  margin-top: 30px;
+  padding-left: 20px;
+  padding-right: 20px;
   display: flex;
-  /* background-color: #f9f7d1; */
-  height: 850px;
-  gap: 30px;
-  padding-left: 10px;
-  padding-right: 10px;
+  align-items: center;
+  justify-content: space-between;
 }
 .input {
   display: flex;
@@ -218,3 +217,99 @@ form input {
 .input input::placeholder {
     color: #999;
 }
+/* MAIN PAGE */
+.main2{
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  padding-left: 30px;
+  padding-right: 30px;
+  margin-top: 20px;
+  
+}
+.main2 .student-info{
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  flex-direction: column;
+  font-family: tahoma;
+  border: 1px black solid;
+  width: 600px;
+  height: 80vh;
+}
+.student-info h1{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  width: 100%;
+  background: #75a0ae;
+  border-radius: 5px;
+}
+.main2 .announcement{
+  display: flex;
+  justify-content: start;
+  align-items: start;
+  flex-direction: column;
+  font-family: tahoma;
+  border: 1px black solid;
+  width: 600px;
+  height: 80vh;
+}
+.announcement h1{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+  width: 100%;
+  background: #75a0ae;
+  border: none;
+  border-radius: 5px;
+}
+.main2 .rules-reg{
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  flex-direction: column;
+  font-family: tahoma;
+  width: 500px;
+  border: 1px black solid;
+  width: 600px;
+  height: 80vh;
+}
+.rules-reg h1{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+  width: 100%;
+  background: #75a0ae;
+  border-radius: 5px;
+}
+.stud-prof{
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  height: 300px;
+  width: 300px;
+  overflow: hidden;
+  border-radius: 100%;
+}
+.student-info p{
+  margin-top: 20px;
+  font-family: tahoma;
+  font-size: 20px;
+
+}
+.info{
+  width: 100%;
+  padding-left: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.info span{
+  margin-right: 10px;
+  font-weight: bold;
+}
+
