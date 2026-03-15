@@ -227,7 +227,7 @@ form input {
   margin-top: 20px;
   
 }
-.main2 .student-info{
+ .student-info{
   display: flex;
   justify-content: start;
   align-items: center;
@@ -236,15 +236,22 @@ form input {
   border: 1px black solid;
   width: 600px;
   height: 80vh;
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
 }
 .student-info h1{
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 50px;
   width: 100%;
-  background: #75a0ae;
+  background: #35779f;
   border-radius: 5px;
+  font-size: 24px;
 }
 .main2 .announcement{
   display: flex;
@@ -256,16 +263,6 @@ form input {
   width: 600px;
   height: 80vh;
 }
-.announcement h1{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50px;
-  width: 100%;
-  background: #75a0ae;
-  border: none;
-  border-radius: 5px;
-}
 .main2 .rules-reg{
   display: flex;
   justify-content: start;
@@ -276,15 +273,6 @@ form input {
   border: 1px black solid;
   width: 600px;
   height: 80vh;
-}
-.rules-reg h1{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50px;
-  width: 100%;
-  background: #75a0ae;
-  border-radius: 5px;
 }
 .stud-prof{
   margin-top: 20px;
@@ -311,5 +299,127 @@ form input {
 .info span{
   margin-right: 10px;
   font-weight: bold;
+}
+
+/* Announcement Section */
+.announcement {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.announcement h1 {
+  background: #35779f;
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+  width: 100%;
+}
+
+.announcement-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-left: 4px solid #35779f;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.announcement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.announcement-card .date {
+  color: #6c757d;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.announcement-card h3 {
+  color: #35779f;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.announcement-card p {
+  color: #495057;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Rules & Regulations Section */
+.rules-reg {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.rules-reg h1 {
+  background: #35779f;
+  color: rgb(255, 255, 255);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50px;
+  width: 100%;
+  border-radius: 5px;
+}
+
+
+.rules-list {
+  list-style: none;
+}
+.rules-list h4{
+font-size: 24px;
+font-family: tahoma;
+}
+.rules-list h5{
+font-size: 24px;
+font-family: tahoma;
+}
+
+.rules-list li {
+  margin-top: 10px;
+  background: #f8f9fa;
+  border-left: 4px solid #28a745;
+  border-radius: 6px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #495057;
+  transition:0.3s ease;
+}
+
+.rules-list li:hover {
+  background: #e9ecef;
+}
+
+.rules-list li .rule-number {
+  display: inline-block;
+  background: #28a745;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 24px;
+  margin-right: 10px;
+  font-weight: bold;
+  font-size: 12px;
 }
 
