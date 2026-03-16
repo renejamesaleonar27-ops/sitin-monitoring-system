@@ -52,11 +52,22 @@ background-position: center;">
         </div>
         <div class="input">
             <label for="courselevel">Course Level</label>
-            <input type="text" id="courselevel" name="courselevel" placeholder="Course Level" required>
+            <select id="courselevel" name="courselevel" required>
+                <option value="" disabled selected>Select Course Level</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
         </div>
         <div class="input">
             <label for="course">Course</label>
-            <input type="text" id="course" name="course" placeholder="Course" required>
+            <select id="course" name="course" required>
+                <option value="" disabled selected>Select Course</option>
+                <option value="BSIT">BS in Information Technology</option>
+                <option value="BSCS">BS in Computer Science</option>
+                <option value="BSIS">BS in Information Systems</option>
+            </select>
         </div>
         <div class="input">
             <label for="email">Email</label>

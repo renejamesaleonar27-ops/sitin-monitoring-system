@@ -210,6 +210,13 @@ form input {
   border-radius: 10px;
   outline: none;
 }
+.input input, 
+.input select {
+    width: 100%;
+    padding: 10px; /* Adjust based on your current design */
+    box-sizing: border-box;
+    border-radius: 10px;
+}
 .input input:focus{
     border-color: #572c6d;
     box-shadow: 0 0 10px #572c6d white;
@@ -387,10 +394,17 @@ form input {
 .rules-list h4{
 font-size: 24px;
 font-family: tahoma;
+display: flex;
+align-items: center;
+justify-content: center;
+color: rgb(11, 125, 179);
 }
 .rules-list h5{
 font-size: 24px;
 font-family: tahoma;
+display: flex;
+align-items: center;
+justify-content: center;
 }
 
 .rules-list li {
