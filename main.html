@@ -24,7 +24,7 @@ background-position: 100%; height: 100vh;">
             <a href="">Edit Profile</a>
             <a href="">History</a>
             <a href="">Reservation</a>
-            <a href="login.html">Logout</a>
+            <a href="" id="logout-link">Logout</a>
             
         </div>
     </nav>
@@ -35,12 +35,12 @@ background-position: 100%; height: 100vh;">
                     <img src="images/makoysirkol.png " alt="stud-prof">
             </div>
             <div class="info">
-            <p id=""><span>👤Name:</span>Juhn Marc Fajardo</p>
-            <p id=""><span>🎓Course:</span>BSCS</p>
-            <p id=""><span>👤Year:</span>3</p>
-            <p id=""><span>✉️Email:</span>makoytorino@yahoo.com</p>
-            <p id=""><span>🏠Address:</span>Iniwan ni Rona</p>
-            <p id=""><span>⏳Session:</span>28</p>
+            <p id="student-name"><span>👤Name:</span> Loading...</p>
+            <p id="student-course"><span>🎓Course:</span> Loading...</p>
+            <p id="student-year"><span>👤Year:</span> Loading...</p>
+            <p id="student-email"><span>✉️Email:</span> Loading...</p>
+            <p id="student-address"><span>🏠Address:</span> Loading...</p>
+            <p id="student-sessions"><span>⏳Session:</span> Loading...</p>
             </div>
         </div>
 
@@ -83,5 +83,42 @@ background-position: 100%; height: 100vh;">
         </div>
     </div>
     <script src="script.js"></script>
+    <script>
+        // Fetch current user data on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch('/api/current-user');
+                if (response.status === 401) {
+                    // Not logged in, redirect to login
+                    window.location.href = '/login.html';
+                    return;
+                }
+                
+                const user = await response.json();
+                
+                // Update the DOM with user data
+                const fullName = `${user.firstname} ${user.middlename ? user.middlename + ' ' : ''}${user.lastname}`;
+                document.getElementById('student-name').innerHTML = `<span>👤Name:</span> ${fullName}`;
+                document.getElementById('student-course').innerHTML = `<span>🎓Course:</span> ${user.course}`;
+                document.getElementById('student-year').innerHTML = `<span>👤Year:</span> ${user.courselevel}`;
+                document.getElementById('student-email').innerHTML = `<span>✉️Email:</span> ${user.email}`;
+                document.getElementById('student-address').innerHTML = `<span>🏠Address:</span> ${user.address || 'N/A'}`;
+                document.getElementById('student-sessions').innerHTML = `<span>⏳Session:</span> ${user.totalSessions || 0}`;
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        });
+
+        // Handle logout
+        document.getElementById('logout-link').addEventListener('click', async function(e) {
+            e.preventDefault();
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+            }
+        });
+    </script>
     </body>
 </html>

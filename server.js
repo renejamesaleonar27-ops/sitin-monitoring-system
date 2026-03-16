@@ -3,11 +3,18 @@ const initSqlJs = require('sql.js');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const PORT = 3000;
+const SESSION_SECRET = crypto.randomBytes(32).toString('hex');
+
+// In-memory session store (for demo purposes)
+const sessions = {};
 
 // --- Middleware ---
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
@@ -53,6 +60,19 @@ async function startServer() {
     `);
     saveDatabase();
     console.log('Users table ready.');
+
+    // --- Create the user_sessions table ---
+    db.run(`DROP TABLE IF EXISTS user_sessions`);
+    db.run(`
+        CREATE TABLE user_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            sessions INTEGER DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    `);
+    saveDatabase();
+    console.log('User sessions table ready.');
 
     // --- Registration Route ---
     app.post('/register', (req, res) => {
@@ -107,7 +127,11 @@ async function startServer() {
                     return res.status(401).send('Login failed: Incorrect password.');
                 }
 
-                // Login successful
+                // Login successful - create session
+                const sessionId = crypto.randomBytes(32).toString('hex');
+                sessions[sessionId] = { userId: user.id, idnumber: user.idnumber };
+                
+                res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
                 res.redirect('/main.html');
             } else {
                 stmt.free();
@@ -116,6 +140,55 @@ async function startServer() {
         } catch (err) {
             res.status(500).send('Login failed: ' + err.message);
         }
+    });
+
+    // --- Get Current User API ---
+    app.get('/api/current-user', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+        
+        try {
+            const stmt = db.prepare('SELECT id, idnumber, lastname, firstname, middlename, courselevel, course, address, email FROM users WHERE id = ?');
+            stmt.bind([userId]);
+            
+            if (stmt.step()) {
+                const user = stmt.getAsObject();
+                stmt.free();
+                
+                // Get remaining sessions
+                const sessionStmt = db.prepare('SELECT COALESCE(SUM(sessions), 0) as totalSessions FROM user_sessions WHERE user_id = ?');
+                sessionStmt.bind([userId]);
+                let totalSessions = 0;
+                if (sessionStmt.step()) {
+                    const result = sessionStmt.getAsObject();
+                    totalSessions = result.totalSessions || 0;
+                }
+                sessionStmt.free();
+                
+                user.totalSessions = totalSessions;
+                res.json(user);
+            } else {
+                stmt.free();
+                res.status(404).json({ error: 'User not found' });
+            }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Logout API ---
+    app.post('/api/logout', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (sessionId && sessions[sessionId]) {
+            delete sessions[sessionId];
+        }
+        res.clearCookie('sessionId');
+        res.json({ success: true });
     });
 
     // --- Start the Server ---
