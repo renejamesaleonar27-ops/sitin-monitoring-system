@@ -72,6 +72,38 @@ async function startServer() {
     saveDatabase();
     console.log('User sessions table ready.');
 
+    // --- Create the admins table if not exists ---
+    db.run(`
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            name TEXT NOT NULL
+        )
+    `);
+    
+    // Check if admin exists, if not create default admin
+    const adminCheck = db.exec('SELECT COUNT(*) as count FROM admins');
+    if (adminCheck.length === 0 || adminCheck[0].values[0][0] === 0) {
+        const hashedAdminPassword = bcrypt.hashSync('admin123', 10);
+        db.run('INSERT INTO admins (username, password, name) VALUES (?, ?, ?)', 
+            ['admin', hashedAdminPassword, 'Administrator']);
+        saveDatabase();
+        console.log('Default admin created (username: admin, password: admin123)');
+    }
+
+    // --- Create the announcements table if not exists ---
+    db.run(`
+        CREATE TABLE IF NOT EXISTS announcements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            date DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    saveDatabase();
+    console.log('Announcements table ready.');
+
     // --- Registration Route ---
     app.post('/register', (req, res) => {
         const {
@@ -111,6 +143,25 @@ async function startServer() {
         const { idnumber, password } = req.body;
 
         try {
+            // First check if it's an admin login
+            const adminStmt = db.prepare('SELECT * FROM admins WHERE username = ?');
+            adminStmt.bind([idnumber]);
+            
+            if (adminStmt.step()) {
+                const admin = adminStmt.getAsObject();
+                adminStmt.free();
+                
+                const isMatch = bcrypt.compareSync(password, admin.password);
+                if (isMatch) {
+                    const sessionId = crypto.randomBytes(32).toString('hex');
+                    sessions[sessionId] = { userId: admin.id, idnumber: admin.username, isAdmin: true };
+                    res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+                    return res.redirect('/admin.html');
+                }
+            }
+            adminStmt.free();
+            
+            // If not admin, check regular users
             const stmt = db.prepare('SELECT * FROM users WHERE idnumber = ?');
             stmt.bind([idnumber]);
 
@@ -187,6 +238,57 @@ async function startServer() {
         }
         res.clearCookie('sessionId');
         res.json({ success: true });
+    });
+
+    // --- Public: Get Announcements (for main.html) ---
+    app.get('/api/announcements', (req, res) => {
+        try {
+            const stmt = db.prepare('SELECT * FROM announcements ORDER BY date DESC');
+            const results = [];
+            while (stmt.step()) {
+                results.push(stmt.getAsObject());
+            }
+            stmt.free();
+            res.json(results);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Create Announcement ---
+    app.post('/api/admin/announcements', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+        
+        const { title, content } = req.body;
+        
+        try {
+            db.run('INSERT INTO announcements (title, content) VALUES (?, ?)', [title, content]);
+            saveDatabase();
+            res.json({ success: true, message: 'Announcement created successfully' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Delete Announcement ---
+    app.delete('/api/admin/announcements/:id', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+        
+        const { id } = req.params;
+        
+        try {
+            db.run('DELETE FROM announcements WHERE id = ?', [id]);
+            saveDatabase();
+            res.json({ success: true, message: 'Announcement deleted successfully' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
     });
 
     // --- Start the Server ---

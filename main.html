@@ -20,7 +20,7 @@ background-position: 100%; height: 100vh;">
 
         <div class="links">
             <a href="">Notification</a>
-            <a href="">Home</a>
+            <a href="index.html">Home</a>
             <a href="">Edit Profile</a>
             <a href="">History</a>
             <a href="">Reservation</a>
@@ -46,25 +46,23 @@ background-position: 100%; height: 100vh;">
 
         <div class="announcement">
             <h1>Announcement</h1>
-            <div class="announcement-card">
-                <div class="date">📅 March 15, 2026</div>
-                <h3>📢 Important: Lab Schedule Update</h3>
-                <p>The CCS Laboratory will have a new schedule starting next week. Please check your email for the updated timetable.</p>
-            </div>
-            <div class="announcement-card">
-                <div class="date">📅 March 10, 2026</div>
-                <h3>🔧 System Maintenance</h3>
-                <p>The sit-in monitoring system will undergo maintenance on March 20, 2026 from 2:00 PM to 5:00 PM.</p>
-            </div>
-            <div class="announcement-card">
-                <div class="date">📅 March 5, 2026</div>
-                <h3>🎉 New Computer Labs Available</h3>
-                <p>We are happy to announce that two new computer labs are now open for student sit-in sessions.</p>
-            </div>
-            <div class="announcement-card">
-                <div class="date">📅 February 28, 2026</div>
-                <h3>📋 Reservation System Updated</h3>
-                <p>The reservation system has been improved for better user experience. Please log in to try the new features.</p>
+            <div id="announcements-container">
+                <div class="announcement-card">
+                    <div class="date"></div>
+                    
+                </div>
+                <div class="announcement-card">
+                    <div class="date"></div>
+                    
+                </div>
+                <div class="announcement-card">
+                    <div class="date"></div>
+                    
+                </div>
+                <div class="announcement-card">
+                    <div class="date"> </div>
+                    
+                </div>
             </div>
         </div>
 
@@ -96,7 +94,7 @@ background-position: 100%; height: 100vh;">
     </div>
     <script src="script.js"></script>
     <script>
-        // Fetch current user data on page load
+        // Fetch current user data and announcements on page load
         document.addEventListener('DOMContentLoaded', async function() {
             try {
                 const response = await fetch('/api/current-user');
@@ -118,6 +116,25 @@ background-position: 100%; height: 100vh;">
                 document.getElementById('student-sessions').innerHTML = `<span>⏳Session:</span> ${user.totalSessions || 0}`;
             } catch (error) {
                 console.error('Error fetching user data:', error);
+            }
+
+            // Load announcements from server
+            try {
+                const annResponse = await fetch('/api/announcements');
+                const announcements = await annResponse.json();
+                
+                const container = document.getElementById('announcements-container');
+                if (announcements.length > 0) {
+                    container.innerHTML = announcements.map(a => `
+                        <div class="announcement-card">
+                            <div class="date">📅 ${new Date(a.date).toLocaleDateString()}</div>
+                            <h3>${a.title}</h3>
+                            <p>${a.content}</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error fetching announcements:', error);
             }
         });
 
