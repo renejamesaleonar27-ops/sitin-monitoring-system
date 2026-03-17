@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css">
     <title>Sit-in Monitoring System</title>
 </head>
-<body style="background-image: url(images/bg.jpg);
+<body class="animated-bg" style="background-image: url(images/bg.jpg);
 background-size: cover;
 background-position: center;">
      <nav>
@@ -27,13 +27,13 @@ background-position: center;">
             
         </div>
     </nav>
-    <div class="main">
-        <div class="left">
-            <img src="images/ccslogo.png" alt="CCSlogo" height="300px" width="300px">
+    <div class="main" style="animation: fadeIn 0.8s ease-out;">
+        <div class="left" style="animation: slideInLeft 0.8s ease-out;">
+            <img src="images/ccslogo.png" alt="CCSlogo" height="300px" width="300px" style="animation: float 3s ease-in-out infinite;">
             
             
         </div>
-         <div class="right">
+         <div class="right" style="animation: slideInRight 0.8s ease-out;">
             <h1>Welcome to</h1>
             <h1 class>CCS Sit-in Monitoring System</h1>
             <p>A specialized management tool designed to automate and streamline the tracking of students using computer laboratories.</p>
@@ -41,6 +41,8 @@ background-position: center;">
         </div>
         
     </div>
+    <div class="main2" style="animation: fadeIn 0.6s ease-out;">
+
     <script src="script.js"></script>
     </body>
 </html>
