@@ -41,10 +41,9 @@ async function startServer() {
         fs.writeFileSync(DB_PATH, buffer);
     }
 
-    // --- Create the users table ---
-    db.run(`DROP TABLE IF EXISTS users`);
+    // --- Create the users table if not exists ---
     db.run(`
-        CREATE TABLE users (
+        CREATE TABLE IF NOT EXISTS users (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             idnumber    TEXT    NOT NULL UNIQUE,
             lastname    TEXT    NOT NULL,
@@ -61,10 +60,9 @@ async function startServer() {
     saveDatabase();
     console.log('Users table ready.');
 
-    // --- Create the user_sessions table ---
-    db.run(`DROP TABLE IF EXISTS user_sessions`);
+    // --- Create the user_sessions table if not exists ---
     db.run(`
-        CREATE TABLE user_sessions (
+        CREATE TABLE IF NOT EXISTS user_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             sessions INTEGER DEFAULT 0,

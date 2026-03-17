@@ -82,6 +82,18 @@ background-position: 100%; height: 100vh;">
             </ul>
         </div>
     </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logout Confirmation</h2>
+            <p>Are you sure you want to log out?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-confirm">Yes, Logout</button>
+                <button id="cancel-logout" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
     <script>
         // Fetch current user data on page load
@@ -109,14 +121,32 @@ background-position: 100%; height: 100vh;">
             }
         });
 
-        // Handle logout
-        document.getElementById('logout-link').addEventListener('click', async function(e) {
+        // Handle logout - show confirmation modal
+        document.getElementById('logout-link').addEventListener('click', function(e) {
             e.preventDefault();
+            document.getElementById('logout-modal').style.display = 'flex';
+        });
+
+        // Confirm logout
+        document.getElementById('confirm-logout').addEventListener('click', async function() {
             try {
                 await fetch('/api/logout', { method: 'POST' });
                 window.location.href = '/login.html';
             } catch (error) {
                 console.error('Error logging out:', error);
+            }
+        });
+
+        // Cancel logout
+        document.getElementById('cancel-logout').addEventListener('click', function() {
+            document.getElementById('logout-modal').style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('logout-modal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
             }
         });
     </script>

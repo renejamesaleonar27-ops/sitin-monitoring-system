@@ -1,107 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Registration</title>
-</head>
-<body style="background-image: url(images/ucampus.jpg);
-background-size: cover;
-background-position: center;">
-       <nav>
-        <div class="logo">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="style.css">
+      <title>Registration</title>
+   </head>
+   <body style="background-image: url(images/ucampus.jpg);
+      background-size: cover;
+      background-position: center;">
+      <nav>
+         <div class="logo">
             <div class="logo-holder"></div>
             <img src="images/uc.png" alt="UCLOGO"
-            height="80px"width = "80px">
+               height="80px"width = "80px">
             <P class="title">CCS Sit-in Monitoring System</P>
-        </div>
-                
-
-        <div class="links">
+         </div>
+         <div class="links">
             <a href="index.html">Home</a>
             <a href="">Community</a>
             <a href="">About</a>
             <a href="login.html">Login</a>
             <a href="">Register</a>
-            
-        </div>
-    </nav>
-    <div class="regmain">
-
-    </div>
-<section class="register">
-    <form class="register-form" action="/register" method="POST">
-
-        <h1 style="margin-bottom:20px;">Register Account</h1>
-        <div class="input">
-            <label for="idnumber">ID Number</label>
-            <input type="text" id="idnumber" name="idnumber" placeholder="ID Number" required>
-        </div>
-        <div class="input">
-            <label for="lastname">Last Name</label>
-            <input type="text" id="lastname" name="lastname" placeholder="Last Name" required>
-        </div>
-        <div class="input">
-            <label for="firstname">First Name</label>
-            <input type="text" id="firstname" name="firstname" placeholder="First Name" required>
-        </div>
-        <div class="input">
-            <label for="middlename">Middle Name</label>
-            <input type="text" id="middlename" name="middlename" placeholder="Middle Name">
-        </div>
-        <div class="input">
-            <label for="courselevel">Course Level</label>
-            <select id="courselevel" name="courselevel" required>
-                <option value="" disabled selected>Select Course Level</option>
-                <option value="1">1st Year</option>
-                <option value="2">2nd Year</option>
-                <option value="3">3rd Year</option>
-                <option value="4">4th Year</option>
-            </select>
-        </div>
-        <div class="input">
-            <label for="course">Course</label>
-            <select id="course" name="course" required>
-                <option value="" disabled selected>Select Course</option>
-                <option value="BSIT">College of Information Technology</option>
-                <option value="BSCS">College of Computer Science</option>
-                <option value="BSIS">College of Computer Engineering</option>
-                <option value="BSIS">College of Arts and Sciences</option>
-                <option value="BSIS">College of Criminal Justice</option>
-                <option value="BSIS">College of Customs Administration</option>
-                <option value="BSIS">College of Hospitality Management</option>
-                <option value="BSIS">College of Nursing</option>
-                <option value="BSIS">College of Social Work</option>
-                <option value="BSIS">College of Teacher Education </option>
-                
-            </select>
-        </div>
-        <div class="input">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" placeholder="Email" required>
-        </div>
-        <div class="input">
-            <label for="address">Address</label>
-            <input type="text" id="address" name="address" placeholder="Address">
-        </div>
-        <div class="input">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Password" required>
-        </div>
-        <div class="input">
-            <label for="reppassword">Repeat your password</label>
-            <input type="password" id="reppassword" placeholder="Repeat your password" required>
-        </div>
-        <div class="actions">
-            <button class="button" type="submit">Register</button>
-            <p>Already have an account? <a href="login.html">Login here</a></p>
-        </div>
-
-    </form>
-</section>
->
-            
-        </section>
-</body>
+         </div>
+      </nav>
+      <div class="regmain">
+      </div>
+      <section class="register">
+         <form class="register-form" action="/register" method="POST">
+            <h1 style="margin-bottom:20px;">Register Account</h1>
+            <div class="form-holder">
+               <div>
+                  <div class="input">
+                     <label for="idnumber">ID Number</label>
+                     <input type="text" id="idnumber" name="idnumber" placeholder="ID Number" required>
+                  </div>
+                  <div class="input">
+                     <label for="lastname">Last Name</label>
+                     <input type="text" id="lastname" name="lastname" placeholder="Last Name" required>
+                  </div>
+                  <div class="input">
+                     <label for="firstname">First Name</label>
+                     <input type="text" id="firstname" name="firstname" placeholder="First Name" required>
+                  </div>
+                  <div class="input">
+                     <label for="middlename">Middle Name</label>
+                     <input type="text" id="middlename" name="middlename" placeholder="Middle Name">
+                  </div>
+                  <div class="input">
+                     <label for="courselevel">Course Level</label>
+                     <select id="courselevel" name="courselevel" required>
+                        <option value="" disabled selected>Select Course Level</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                     </select>
+                  </div>
+               </div>
+               <div class="course-label">
+                  <div class="input">
+                     <label for="course">Course</label>
+                     <select id="course" name="course" required>
+                        <option value="" disabled selected>Select Course</option>
+                        <option value="BSIT">College of Information Technology</option>
+                        <option value="BSCS">College of Computer Science</option>
+                        <option value="BSCE">College of Computer Engineering</option>
+                        <option value="BSAS">College of Arts and Sciences</option>
+                        <option value="BSCJ">College of Criminal Justice</option>
+                        <option value="BSCA">College of Customs Administration</option>
+                        <option value="BSHM">College of Hospitality Management</option>
+                        <option value="BSCN">College of Nursing</option>
+                        <option value="BSSW">College of Social Work</option>
+                        <option value="BSTE">College of Teacher Education </option>
+                     </select>
+                  </div>
+                  <div class="input">
+                     <label for="email">Email</label>
+                     <input type="email" id="email" name="email" placeholder="Email" required>
+                  </div>
+                  <div class="input">
+                     <label for="address">Address</label>
+                     <input type="text" id="address" name="address" placeholder="Address">
+                  </div>
+                  <div class="input">
+                     <label for="password">Password</label>
+                     <input type="password" id="password" name="password" placeholder="Password" required>
+                  </div>
+                  <div class="input">
+                     <label for="reppassword">Repeat your password</label>
+                     <input type="password" id="reppassword" placeholder="Repeat your password" required>
+                  </div>
+                  <div class="actions">
+                     <button class="button" type="submit">Register</button>
+                     <p>Already have an account? <a href="login.html">Login here</a></p>
+                  </div>
+               </div>
+            </div>
+         </form>
+      </section>
+      </section>
+   </body>
 </html>
