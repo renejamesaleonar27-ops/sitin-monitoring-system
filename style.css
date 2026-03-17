@@ -547,6 +547,81 @@ body.animated-bg {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-15px); }
 }
+
+/* Search Box for Admin */
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.search-box input:focus {
+    border-color: #1a5276;
+    outline: none;
+}
+
+.search-box .btn-primary {
+    padding: 12px 25px;
+}
+
+/* Sit-in Modal Specific Styles */
+#sitin-modal .modal-content {
+    max-width: 500px;
+}
+
+#sitin-modal .form-group {
+    margin-bottom: 15px;
+}
+
+#sitin-modal .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+#sitin-modal .form-group input,
+#sitin-modal .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+/* Students Table */
+#students-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#students-table th, #students-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#students-table th {
+    background: #1a5276;
+    color: white;
+}
+
+#students-table tr:hover {
+    background: #f5f5f5;
+}
+
+#students-panel {
+    margin-top: 20px;
+}
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;

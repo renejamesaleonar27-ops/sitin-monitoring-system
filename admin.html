@@ -21,10 +21,10 @@ background-position: center;">
 
         <div class="links">
             <a href="index.html">Home</a>
-            <a href="">Search</a>
-            <a href="">Students</a>
-            <a href="">Sit-in</a>
-            <a href="">View Sit-in Records</a>
+            <a href="" onclick="showSearchModal()">Search</a>
+            <a href="students.html">Students</a>
+            <a href="" onclick="showSitInForm()">Sit-in</a>
+            <a href="sit-in-records.html">View Sit-in Records</a>
             <a href=""> Sit-in Reports</a>
             <a href=""> Feedback Reports</a>
             <a href=""> Reservation</a>
@@ -56,6 +56,103 @@ background-position: center;">
                     <h3>Active Sessions</h3>
                     <div class="number" id="stat-active-sessions">-</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Search Student Modal -->
+        <div id="search-modal" class="modal">
+            <div class="modal-content" style="max-width: 500px;">
+                <h2>🔍 Search Student for Sit-in</h2>
+                <div class="search-box">
+                    <input type="text" id="search-student-id" placeholder="Enter Student ID">
+                    <button type="button" class="btn-primary" onclick="searchStudent()">Search</button>
+                </div>
+                <button type="button" class="btn-cancel" onclick="closeSearchModal()" style="margin-top: 10px;">Close</button>
+            </div>
+        </div>
+
+        <!-- Sit-in Form Modal -->
+        <div id="sitin-modal" class="modal">
+            <div class="modal-content">
+                <h2> New Sit-in Record</h2>
+                <form id="sitin-form">
+                    <div class="form-group">
+                        <label for="sitin-student-id">Student ID</label>
+                        <input type="text" id="sitin-student-id" name="studentId" placeholder="Enter Student ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="sitin-student-name">Student Name</label>
+                        <input type="text" id="sitin-student-name" name="studentName" placeholder="Enter Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="sitin-purpose">Purpose</label>
+                        <select id="sitin-purpose" name="purpose" required>
+                            <option value="">Select Purpose</option>
+                            <option value="Coding">Coding</option>
+                            <option value="Research">Research</option>
+                            <option value="Assignment">Assignment</option>
+                            <option value="Printing">Printing</option>
+                            <option value="Internet">Internet</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sitin-lab">Lab Number</label>
+                        <select id="sitin-lab" name="lab" required>
+                            <option value="">Select Lab</option>
+                            <option value="Lab 1">Lab 524</option>
+                            <option value="Lab 2">Lab 526</option>
+                            <option value="Lab 3">Lab 528</option>
+                            <option value="Lab 4">Lab 530</option>
+                            <option value="Lab 5">Lab 542</option>
+                            <option value="Lab 6">Lab 544</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sitin-sessions">Sessions</label>
+                        <input type="number" id="sitin-sessions" name="sessions" min="1" max="3" value="1" required>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="btn-confirm">Submit Sit-in</button>
+                        <button type="button" class="btn-cancel" onclick="closeSitInModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alert Modal -->
+        <div id="alert-modal" class="modal">
+            <div class="modal-content" style="max-width: 400px; text-align: center;">
+                <h2 id="alert-title">Success!</h2>
+                <p id="alert-message">Operation completed successfully.</p>
+                <div class="modal-buttons">
+                    <button class="btn-confirm" onclick="closeAlertModal()">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sit-in Records Modal -->
+        <div id="sitin-records-modal" class="modal">
+            <div class="modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+                <h2> Current Sit-in Records</h2>
+                <table id="sitin-records-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Student ID</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Name</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Lab</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Purpose</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Sessions</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Time In</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Status</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sitin-records-list">
+                        <tr><td colspan="8">Loading records...</td></tr>
+                    </tbody>
+                </table>
+                <button class="btn-cancel" onclick="closeSitInRecordsModal()" style="margin-top: 15px;">Close</button>
             </div>
         </div>
 
@@ -159,6 +256,268 @@ background-position: center;">
 
         // Load announcements on page load
         loadAnnouncements();
+
+        // Search student by ID
+        async function searchStudent() {
+            const studentId = document.getElementById('search-student-id').value.trim();
+            if (!studentId) {
+                showAlert('Warning', 'Please enter a student ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/search-student?idnumber=${encodeURIComponent(studentId)}`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.found) {
+                    // Student found - open sit-in form with pre-filled data
+                    closeSearchModal();
+                    document.getElementById('sitin-student-id').value = data.student.idnumber;
+                    const fullName = `${data.student.firstname} ${data.student.middlename || ''} ${data.student.lastname}`.trim();
+                    document.getElementById('sitin-student-name').value = fullName;
+                    
+                    // Get remaining sessions from user_sessions table
+                    fetchStudentSessions(data.student.idnumber);
+                    
+                    document.getElementById('sitin-modal').style.display = 'flex';
+                } else {
+                    // Student not found - allow manual entry
+                    closeSearchModal();
+                    document.getElementById('sitin-student-id').value = studentId;
+                    document.getElementById('sitin-student-name').value = '';
+                    document.getElementById('sitin-sessions').value = 1;
+                    showAlert('Not Found', 'Student not found. You can still create a sit-in record.');
+                    document.getElementById('sitin-modal').style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Error searching student:', error);
+                showAlert('Error', 'Error searching for student');
+            }
+        }
+
+        // Fetch student remaining sessions
+        async function fetchStudentSessions(studentId) {
+            try {
+                const response = await fetch(`/api/admin/student-sessions?idnumber=${encodeURIComponent(studentId)}`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                // Set sessions remaining (default to 3 if no record)
+                document.getElementById('sitin-sessions').value = data.sessions !== undefined ? data.sessions : 3;
+            } catch (error) {
+                console.error('Error fetching sessions:', error);
+                document.getElementById('sitin-sessions').value = 3;
+            }
+        }
+
+        // Scroll to search panel
+        function scrollToSearch() {
+            event.preventDefault();
+            showSearchModal();
+        }
+
+        // Show search modal
+        function showSearchModal() {
+            if (event) event.preventDefault();
+            document.getElementById('search-student-id').value = '';
+            document.getElementById('search-modal').style.display = 'flex';
+        }
+
+        // Close search modal
+        function closeSearchModal() {
+            document.getElementById('search-modal').style.display = 'none';
+        }
+
+        // Show sit-in form directly
+        function showSitInForm() {
+            event.preventDefault();
+            document.getElementById('sitin-student-id').value = '';
+            document.getElementById('sitin-student-name').value = '';
+            document.getElementById('sitin-purpose').value = '';
+            document.getElementById('sitin-lab').value = '';
+            document.getElementById('sitin-sessions').value = '1';
+            document.getElementById('sitin-modal').style.display = 'flex';
+        }
+
+        // Show alert modal
+        function showAlert(title, message) {
+            document.getElementById('alert-title').textContent = title;
+            document.getElementById('alert-message').textContent = message;
+            document.getElementById('alert-modal').style.display = 'flex';
+        }
+
+        // Close alert modal
+        function closeAlertModal() {
+            document.getElementById('alert-modal').style.display = 'none';
+        }
+
+        // Show sit-in records modal
+        function showSitInRecords() {
+            event.preventDefault();
+            loadSitInRecords();
+            document.getElementById('sitin-records-modal').style.display = 'flex';
+        }
+
+        // Close sit-in records modal
+        function closeSitInRecordsModal() {
+            document.getElementById('sitin-records-modal').style.display = 'none';
+        }
+
+        // Load sit-in records
+        async function loadSitInRecords() {
+            try {
+                const response = await fetch('/api/admin/current-sitin', {
+                    credentials: 'include'
+                });
+                const records = await response.json();
+                displaySitInRecords(records);
+            } catch (error) {
+                console.error('Error loading sit-in records:', error);
+                document.getElementById('sitin-records-list').innerHTML = '<tr><td colspan="8">Error loading records</td></tr>';
+            }
+        }
+
+        // Display sit-in records
+        function displaySitInRecords(records) {
+            const tbody = document.getElementById('sitin-records-list');
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8">No active sit-in records</td></tr>';
+                return;
+            }
+            tbody.innerHTML = records.map(r => `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px;">${r.student_id}</td>
+                    <td style="padding: 10px;">${r.student_name}</td>
+                    <td style="padding: 10px;">${r.lab}</td>
+                    <td style="padding: 10px;">${r.purpose}</td>
+                    <td style="padding: 10px;">${r.sessions}</td>
+                    <td style="padding: 10px;">${new Date(r.time_in).toLocaleString()}</td>
+                    <td style="padding: 10px; color: green; font-weight: bold;">Active</td>
+                    <td style="padding: 10px;"><button class="btn-danger" onclick="endSitIn(${r.id})">End</button></td>
+                </tr>
+            `).join('');
+        }
+
+        // End sit-in
+        async function endSitIn(recordId) {
+            if (!confirm('Are you sure you want to end this sit-in?')) return;
+            try {
+                const response = await fetch('/api/admin/sitin/end', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recordId }),
+                    credentials: 'include'
+                });
+                if (response.ok) {
+                    showAlert('Success', 'Sit-in ended successfully!');
+                    loadSitInRecords();
+                } else {
+                    showAlert('Error', 'Error ending sit-in');
+                }
+            } catch (error) {
+                console.error('Error ending sit-in:', error);
+                showAlert('Error', 'Error ending sit-in');
+            }
+        }
+
+        // Load all students
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/admin/students', {
+                    credentials: 'include'
+                });
+                allStudents = await response.json();
+                displayStudents(allStudents);
+            } catch (error) {
+                console.error('Error loading students:', error);
+                document.getElementById('students-list').innerHTML = '<tr><td colspan="5">Error loading students</td></tr>';
+            }
+        }
+
+        // Display students in table
+        function displayStudents(students) {
+            const tbody = document.getElementById('students-list');
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">No students found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = students.map(s => `
+                <tr>
+                    <td>${s.idnumber}</td>
+                    <td>${s.firstname} ${s.middlename || ''} ${s.lastname}</td>
+                    <td>${s.course}</td>
+                    <td>${s.courselevel}</td>
+                    <td>${s.email}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Filter students by search input
+        function filterStudents() {
+            const query = document.getElementById('search-students-input').value.toLowerCase();
+            const filtered = allStudents.filter(s => 
+                s.idnumber.toLowerCase().includes(query) ||
+                s.firstname.toLowerCase().includes(query) ||
+                s.lastname.toLowerCase().includes(query) ||
+                s.course.toLowerCase().includes(query)
+            );
+            displayStudents(filtered);
+        }
+
+        // Close sit-in modal
+        function closeSitInModal() {
+            document.getElementById('sitin-modal').style.display = 'none';
+            document.getElementById('sitin-form').reset();
+        }
+
+        // Handle sit-in form submission
+        document.getElementById('sitin-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('sitin-student-id').value;
+            const studentName = document.getElementById('sitin-student-name').value;
+            const purpose = document.getElementById('sitin-purpose').value;
+            const lab = document.getElementById('sitin-lab').value;
+            const sessions = document.getElementById('sitin-sessions').value;
+
+            try {
+                const response = await fetch('/api/admin/sitin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, studentName, purpose, lab, sessions: parseInt(sessions) }),
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    showAlert('Success!', 'Sit-in record created successfully!');
+                    closeSitInModal();
+                    document.getElementById('search-student-id').value = '';
+                } else {
+                    showAlert('Error!', 'Error creating sit-in record');
+                }
+            } catch (error) {
+                console.error('Error creating sit-in:', error);
+                alert('Error creating sit-in record');
+            }
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const sitinModal = document.getElementById('sitin-modal');
+            const alertModal = document.getElementById('alert-modal');
+            const searchModal = document.getElementById('search-modal');
+            if (e.target === sitinModal) {
+                closeSitInModal();
+            }
+            if (e.target === alertModal) {
+                closeAlertModal();
+            }
+            if (e.target === searchModal) {
+                closeSearchModal();
+            }
+        });
     </script>
     </body>
 </html>
