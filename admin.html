@@ -28,7 +28,7 @@ background-position: center;">
             <a href=""> Sit-in Reports</a>
             <a href=""> Feedback Reports</a>
             <a href=""> Reservation</a>
-            <a href="login.html">Logout</a>
+            <a href="" id="logout-link">Logout</a>
             
             
         </div>
@@ -110,7 +110,7 @@ background-position: center;">
                     </div>
                     <div class="form-group">
                         <label for="sitin-sessions">Sessions</label>
-                        <input type="number" id="sitin-sessions" name="sessions" min="1" max="3" value="1" required>
+                        <input type="number" id="sitin-sessions" name="sessions" min="1" max="30" value="30" required>
                     </div>
                     <div class="modal-buttons">
                         <button type="submit" class="btn-confirm">Submit Sit-in</button>
@@ -287,7 +287,7 @@ background-position: center;">
                     closeSearchModal();
                     document.getElementById('sitin-student-id').value = studentId;
                     document.getElementById('sitin-student-name').value = '';
-                    document.getElementById('sitin-sessions').value = 1;
+                    document.getElementById('sitin-sessions').value = 30;
                     showAlert('Not Found', 'Student not found. You can still create a sit-in record.');
                     document.getElementById('sitin-modal').style.display = 'flex';
                 }
@@ -305,10 +305,10 @@ background-position: center;">
                 });
                 const data = await response.json();
                 // Set sessions remaining (default to 3 if no record)
-                document.getElementById('sitin-sessions').value = data.sessions !== undefined ? data.sessions : 3;
+                document.getElementById('sitin-sessions').value = data.sessions !== undefined ? data.sessions : 30;
             } catch (error) {
                 console.error('Error fetching sessions:', error);
-                document.getElementById('sitin-sessions').value = 3;
+                document.getElementById('sitin-sessions').value = 30;
             }
         }
 
@@ -337,7 +337,7 @@ background-position: center;">
             document.getElementById('sitin-student-name').value = '';
             document.getElementById('sitin-purpose').value = '';
             document.getElementById('sitin-lab').value = '';
-            document.getElementById('sitin-sessions').value = '1';
+            document.getElementById('sitin-sessions').value = '30';
             document.getElementById('sitin-modal').style.display = 'flex';
         }
 
@@ -516,6 +516,69 @@ background-position: center;">
             }
             if (e.target === searchModal) {
                 closeSearchModal();
+            }
+        });
+    </script>
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logout Confirmation</h2>
+            <p>Are you sure you want to log out?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-confirm">Yes, Logout</button>
+                <button id="cancel-logout" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Success Modal -->
+    <div id="logout-success-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logged Out</h2>
+            <p>You have successfully logged out.</p>
+            <div class="modal-buttons">
+                <button id="logout-ok-btn" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle logout - show confirmation modal
+        document.getElementById('logout-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('logout-modal').style.display = 'flex';
+        });
+
+        // Confirm logout
+        document.getElementById('confirm-logout').addEventListener('click', async function() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                document.getElementById('logout-modal').style.display = 'none';
+                document.getElementById('logout-success-modal').style.display = 'flex';
+                
+                document.getElementById('logout-ok-btn').addEventListener('click', function() {
+                    window.location.href = '/admin-login.html';
+                });
+                
+                // Auto-redirect after 2 seconds if user doesn't click
+                setTimeout(() => {
+                    window.location.href = '/admin-login.html';
+                }, 2000);
+            } catch (error) {
+                console.error('Error logging out:', error);
+            }
+        });
+
+        // Cancel logout
+        document.getElementById('cancel-logout').addEventListener('click', function() {
+            document.getElementById('logout-modal').style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('logout-modal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
             }
         });
     </script>

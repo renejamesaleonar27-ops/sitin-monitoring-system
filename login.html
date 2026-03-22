@@ -47,6 +47,58 @@ background-position: center;">
     </form>
 </section>
 
-       
+<!-- Login Success Modal -->
+<div id="login-success-modal" class="modal">
+    <div class="modal-content">
+        <h2>Welcome!</h2>
+        <p>You have successfully logged in.</p>
+        <div class="modal-buttons">
+            <button id="proceed-btn" class="btn-confirm">Proceed to Dashboard</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelector('.login-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const idnumber = document.getElementById('idnumber').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const formData = new URLSearchParams();
+            formData.append('idnumber', idnumber);
+            formData.append('password', password);
+            
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: formData
+            });
+            
+            if (response.redirected) {
+                // Show success modal before redirecting
+                document.getElementById('login-success-modal').style.display = 'flex';
+                document.getElementById('proceed-btn').addEventListener('click', function() {
+                    window.location.href = response.url;
+                });
+                
+                // Auto-redirect after 2 seconds if user doesn't click
+                setTimeout(() => {
+                    window.location.href = response.url;
+                }, 2000);
+            } else {
+                const errorText = await response.text();
+                alert('Login failed: ' + errorText);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            alert('Login failed. Please try again.');
+        }
+    });
+</script>
+
 </body>
 </html>

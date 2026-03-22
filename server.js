@@ -171,7 +171,7 @@ async function startServer() {
                 if (isMatch) {
                     const sessionId = crypto.randomBytes(32).toString('hex');
                     sessions[sessionId] = { userId: admin.id, idnumber: admin.username, isAdmin: true };
-                    res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+                    res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 30 * 60 * 1000 }); // 30 minutes session
                     return res.redirect('/admin.html');
                 }
             }
@@ -196,7 +196,7 @@ async function startServer() {
                 const sessionId = crypto.randomBytes(32).toString('hex');
                 sessions[sessionId] = { userId: user.id, idnumber: user.idnumber };
                 
-                res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+                res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 30 * 60 * 1000 }); // 30 minutes session
                 res.redirect('/main.html');
             } else {
                 stmt.free();
@@ -204,6 +204,29 @@ async function startServer() {
             }
         } catch (err) {
             res.status(500).send('Login failed: ' + err.message);
+        }
+    });
+
+    // --- Update User Profile API ---
+    app.put('/api/profile', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+        const { firstname, middlename, lastname, address, email } = req.body;
+        
+        try {
+            db.run(`UPDATE users SET firstname = ?, middlename = ?, lastname = ?, address = ?, email = ? WHERE id = ?`,
+                [firstname, middlename || '', lastname, address || '', email, userId]);
+            saveDatabase();
+            console.log(`User ${userId} updated their profile`);
+            res.json({ success: true, message: 'Profile updated successfully' });
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            res.status(500).json({ error: err.message });
         }
     });
 
@@ -249,9 +272,48 @@ async function startServer() {
     // --- Logout API ---
     app.post('/api/logout', (req, res) => {
         const sessionId = req.cookies?.sessionId;
+        let userId = null;
+        
         if (sessionId && sessions[sessionId]) {
+            userId = sessions[sessionId].userId;
             delete sessions[sessionId];
         }
+        
+        // Subtract 30 sessions from user's remaining sessions on logout
+        if (userId) {
+            try {
+                // Get current sessions
+                const sessStmt = db.prepare('SELECT COALESCE(SUM(sessions), 0) as totalSessions FROM user_sessions WHERE user_id = ?');
+                sessStmt.bind([userId]);
+                let currentSessions = 0;
+                if (sessStmt.step()) {
+                    const result = sessStmt.getAsObject();
+                    currentSessions = result.totalSessions || 0;
+                }
+                sessStmt.free();
+                
+                // Subtract 30 (but don't go below 0)
+                const newSessions = Math.max(0, currentSessions - 30);
+                
+                // Update the sessions - insert or update the record
+                const checkStmt = db.prepare('SELECT id FROM user_sessions WHERE user_id = ?');
+                checkStmt.bind([userId]);
+                if (checkStmt.step()) {
+                    // Update existing record
+                    const record = checkStmt.getAsObject();
+                    db.run('UPDATE user_sessions SET sessions = ? WHERE user_id = ?', [newSessions, userId]);
+                } else {
+                    // Insert new record with the subtracted value
+                    db.run('INSERT INTO user_sessions (user_id, sessions) VALUES (?, ?)', [userId, newSessions]);
+                }
+                checkStmt.free();
+                saveDatabase();
+                console.log(`User ${userId} logged out. Sessions remaining: ${newSessions}`);
+            } catch (err) {
+                console.error('Error updating sessions on logout:', err);
+            }
+        }
+        
         res.clearCookie('sessionId');
         res.json({ success: true });
     });
@@ -374,17 +436,17 @@ async function startServer() {
                 // Get sessions from user_sessions
                 const sessStmt = db.prepare('SELECT COALESCE(SUM(sessions), 0) as sessions FROM user_sessions WHERE user_id = ?');
                 sessStmt.bind([user.id]);
-                let sessionsRemaining = 3; // default
+                let sessionsRemaining = 30; // default
                 if (sessStmt.step()) {
                     const result = sessStmt.getAsObject();
-                    sessionsRemaining = 3 - (result.sessions || 0);
+                    sessionsRemaining = 30 - (result.sessions || 0);
                     if (sessionsRemaining < 0) sessionsRemaining = 0;
                 }
                 sessStmt.free();
                 res.json({ sessions: sessionsRemaining });
             } else {
                 userStmt.free();
-                res.json({ sessions: 3 }); // default for unknown users
+                res.json({ sessions: 30 }); // default for unknown users
             }
         } catch (err) {
             res.status(500).json({ error: err.message });
