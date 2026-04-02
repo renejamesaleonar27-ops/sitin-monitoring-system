@@ -248,17 +248,17 @@ async function startServer() {
                 const user = stmt.getAsObject();
                 stmt.free();
                 
-                // Get remaining sessions
-                const sessionStmt = db.prepare('SELECT COALESCE(SUM(sessions), 0) as totalSessions FROM user_sessions WHERE user_id = ?');
+                // Get remaining sessions (30 - consumed)
+                const sessionStmt = db.prepare('SELECT COALESCE(SUM(sessions), 0) as consumedSessions FROM user_sessions WHERE user_id = ?');
                 sessionStmt.bind([userId]);
-                let totalSessions = 0;
+                let remainingSessions = 30;
                 if (sessionStmt.step()) {
                     const result = sessionStmt.getAsObject();
-                    totalSessions = result.totalSessions || 0;
+                    remainingSessions = Math.max(0, 30 - (result.consumedSessions || 0));
                 }
                 sessionStmt.free();
                 
-                user.totalSessions = totalSessions;
+                user.totalSessions = remainingSessions;
                 res.json(user);
             } else {
                 stmt.free();
@@ -406,7 +406,18 @@ async function startServer() {
             const stmt = db.prepare('SELECT id, idnumber, firstname, middlename, lastname, course, courselevel, email FROM users ORDER BY lastname');
             const results = [];
             while (stmt.step()) {
-                results.push(stmt.getAsObject());
+                const student = stmt.getAsObject();
+                // Get remaining sessions for this student
+                const sessStmt = db.prepare('SELECT COALESCE(SUM(sessions), 0) as consumed FROM user_sessions WHERE user_id = ?');
+                sessStmt.bind([student.id]);
+                let remainingSessions = 30;
+                if (sessStmt.step()) {
+                    const sessResult = sessStmt.getAsObject();
+                    remainingSessions = Math.max(0, 30 - (sessResult.consumed || 0));
+                }
+                sessStmt.free();
+                student.remainingSessions = remainingSessions;
+                results.push(student);
             }
             stmt.free();
             res.json(results);
@@ -522,7 +533,48 @@ async function startServer() {
         const { recordId } = req.body;
         
         try {
-            db.run(`UPDATE sitin_records SET time_out = CURRENT_TIMESTAMP WHERE id = ?`, [recordId]);
+            // Get the sit-in record to find the student
+            const recordStmt = db.prepare('SELECT student_id, sessions FROM sitin_records WHERE id = ?');
+            recordStmt.bind([recordId]);
+            
+            if (recordStmt.step()) {
+                const record = recordStmt.getAsObject();
+                recordStmt.free();
+                
+                // Get the user_id from the students table
+                const userStmt = db.prepare('SELECT id FROM users WHERE idnumber = ?');
+                userStmt.bind([record.student_id]);
+                
+                if (userStmt.step()) {
+                    const user = userStmt.getAsObject();
+                    userStmt.free();
+                    
+                    // Get current consumed sessions
+                    const sessStmt = db.prepare('SELECT id, sessions FROM user_sessions WHERE user_id = ?');
+                    sessStmt.bind([user.id]);
+                    
+                    if (sessStmt.step()) {
+                        const sessRecord = sessStmt.getAsObject();
+                        sessStmt.free();
+                        // Add 1 to consumed sessions
+                        db.run('UPDATE user_sessions SET sessions = ? WHERE user_id = ?', [sessRecord.sessions + 1, user.id]);
+                    } else {
+                        sessStmt.free();
+                        // Create new record with 1 consumed session
+                        db.run('INSERT INTO user_sessions (user_id, sessions) VALUES (?, ?)', [user.id, 1]);
+                    }
+                } else {
+                    userStmt.free();
+                }
+                
+                // Update the sit-in record: deduct 1 from sessions and set time_out
+                const newSessions = Math.max(0, record.sessions - 1);
+                db.run(`UPDATE sitin_records SET time_out = CURRENT_TIMESTAMP, sessions = ? WHERE id = ?`, [newSessions, recordId]);
+            } else {
+                recordStmt.free();
+                db.run(`UPDATE sitin_records SET time_out = CURRENT_TIMESTAMP WHERE id = ?`, [recordId]);
+            }
+            
             saveDatabase();
             res.json({ success: true, message: 'Sit-in ended successfully' });
         } catch (err) {

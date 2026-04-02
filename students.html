@@ -114,10 +114,11 @@
                     <th>Course</th>
                     <th>Year</th>
                     <th>Email</th>
+                    <th>Remaining Sessions</th>
                 </tr>
             </thead>
             <tbody id="students-list">
-                <tr><td colspan="5">Loading students...</td></tr>
+                <tr><td colspan="6">Loading students...</td></tr>
             </tbody>
         </table>
     </div>
@@ -165,6 +166,7 @@
                     <td>${s.course}</td>
                     <td>${s.courselevel}</td>
                     <td>${s.email}</td>
+                    <td>${s.remainingSessions !== undefined ? s.remainingSessions : 30}</td>
                 </tr>
             `).join('');
         }

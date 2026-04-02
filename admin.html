@@ -144,12 +144,13 @@ background-position: center;">
                             <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Purpose</th>
                             <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Sessions</th>
                             <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Time In</th>
+                            <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Time Out</th>
                             <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Status</th>
                             <th style="background: #1a5276; color: white; padding: 10px; text-align: left;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="sitin-records-list">
-                        <tr><td colspan="8">Loading records...</td></tr>
+                        <tr><td colspan="9">Loading records...</td></tr>
                     </tbody>
                 </table>
                 <button class="btn-cancel" onclick="closeSitInRecordsModal()" style="margin-top: 15px;">Close</button>
@@ -368,14 +369,14 @@ background-position: center;">
         // Load sit-in records
         async function loadSitInRecords() {
             try {
-                const response = await fetch('/api/admin/current-sitin', {
+                const response = await fetch('/api/admin/sitin-records', {
                     credentials: 'include'
                 });
                 const records = await response.json();
                 displaySitInRecords(records);
             } catch (error) {
                 console.error('Error loading sit-in records:', error);
-                document.getElementById('sitin-records-list').innerHTML = '<tr><td colspan="8">Error loading records</td></tr>';
+                document.getElementById('sitin-records-list').innerHTML = '<tr><td colspan="9">Error loading records</td></tr>';
             }
         }
 
@@ -383,7 +384,7 @@ background-position: center;">
         function displaySitInRecords(records) {
             const tbody = document.getElementById('sitin-records-list');
             if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8">No active sit-in records</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9">No sit-in records</td></tr>';
                 return;
             }
             tbody.innerHTML = records.map(r => `
@@ -394,8 +395,9 @@ background-position: center;">
                     <td style="padding: 10px;">${r.purpose}</td>
                     <td style="padding: 10px;">${r.sessions}</td>
                     <td style="padding: 10px;">${new Date(r.time_in).toLocaleString()}</td>
-                    <td style="padding: 10px; color: green; font-weight: bold;">Active</td>
-                    <td style="padding: 10px;"><button class="btn-danger" onclick="endSitIn(${r.id})">End</button></td>
+                    <td style="padding: 10px;">${r.time_out ? new Date(r.time_out).toLocaleString() : '-'}</td>
+                    <td style="padding: 10px; color: ${r.time_out ? '#666' : 'green'}; font-weight: bold;">${r.time_out ? 'Ended' : 'Active'}</td>
+                    <td style="padding: 10px;">${r.time_out ? '-' : `<button class="btn-danger" onclick="endSitIn(${r.id})">End</button>`}</td>
                 </tr>
             `).join('');
         }
