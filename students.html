@@ -115,10 +115,11 @@
                     <th>Year</th>
                     <th>Email</th>
                     <th>Remaining Sessions</th>
+                    <th>Recent Sit-in</th>
                 </tr>
             </thead>
             <tbody id="students-list">
-                <tr><td colspan="6">Loading students...</td></tr>
+                <tr><td colspan="7">Loading students...</td></tr>
             </tbody>
         </table>
     </div>
@@ -153,13 +154,27 @@
         }
 
         // Display students
-        function displayStudents(students) {
+        async function displayStudents(students) {
             const tbody = document.getElementById('students-list');
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5">No students found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7">No students found</td></tr>';
                 return;
             }
-            tbody.innerHTML = students.map(s => `
+
+            tbody.innerHTML = '<tr><td colspan="7">Loading sit-in data...</td></tr>';
+
+            const studentsWithHistory = await Promise.all(students.map(async (s) => {
+                try {
+                    const response = await fetch(`/api/admin/student-sitin-history/${s.idnumber}`);
+                    const history = await response.json();
+                    const recentSitIn = history.length > 0 ? formatSitInDate(history[0].time_in) : 'No history';
+                    return { ...s, recentSitIn };
+                } catch (err) {
+                    return { ...s, recentSitIn: 'Error' };
+                }
+            }));
+
+            tbody.innerHTML = studentsWithHistory.map(s => `
                 <tr>
                     <td>${s.idnumber}</td>
                     <td>${s.firstname} ${s.middlename || ''} ${s.lastname}</td>
@@ -167,8 +182,14 @@
                     <td>${s.courselevel}</td>
                     <td>${s.email}</td>
                     <td>${s.remainingSessions !== undefined ? s.remainingSessions : 30}</td>
+                    <td>${s.recentSitIn}</td>
                 </tr>
             `).join('');
+        }
+
+        function formatSitInDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
         // Filter students

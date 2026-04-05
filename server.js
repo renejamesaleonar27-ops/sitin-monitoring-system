@@ -426,6 +426,165 @@ async function startServer() {
         }
     });
 
+    // --- Student: Get Own Sit-in History ---
+    app.get('/api/student/sitin-history', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+
+        try {
+            const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+            userStmt.bind([userId]);
+            
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+                
+                const stmt = db.prepare('SELECT * FROM sitin_records WHERE student_id = ? ORDER BY time_in DESC LIMIT 5');
+                stmt.bind([user.idnumber]);
+                const results = [];
+                while (stmt.step()) {
+                    results.push(stmt.getAsObject());
+                }
+                stmt.free();
+                res.json(results);
+            } else {
+                userStmt.free();
+                res.json([]);
+            }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Get Own Sit-in History ---
+    app.get('/api/student/sitin-history', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+
+        try {
+            const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+            userStmt.bind([userId]);
+            
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+                
+                const stmt = db.prepare('SELECT * FROM sitin_records WHERE student_id = ? ORDER BY time_in DESC LIMIT 5');
+                stmt.bind([user.idnumber]);
+                const results = [];
+                while (stmt.step()) {
+                    results.push(stmt.getAsObject());
+                }
+                stmt.free();
+                res.json(results);
+            } else {
+                userStmt.free();
+                res.json([]);
+            }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Get Own Sit-in History ---
+    app.get('/api/student/sitin-history', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+
+        try {
+            const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+            userStmt.bind([userId]);
+            
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+                
+                const stmt = db.prepare('SELECT * FROM sitin_records WHERE student_id = ? ORDER BY time_in DESC LIMIT 20');
+                stmt.bind([user.idnumber]);
+                const results = [];
+                while (stmt.step()) {
+                    results.push(stmt.getAsObject());
+                }
+                stmt.free();
+                res.json(results);
+            } else {
+                userStmt.free();
+                res.json([]);
+            }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Get Own Sit-in History ---
+    app.get('/api/student/sitin-history', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+
+        try {
+            const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+            userStmt.bind([userId]);
+            
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+                
+                const stmt = db.prepare('SELECT * FROM sitin_records WHERE student_id = ? ORDER BY time_in DESC LIMIT 20');
+                stmt.bind([user.idnumber]);
+                const results = [];
+                while (stmt.step()) {
+                    results.push(stmt.getAsObject());
+                }
+                stmt.free();
+                res.json(results);
+            } else {
+                userStmt.free();
+                res.json([]);
+            }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Get Sit-in History for a Specific Student ---
+    app.get('/api/admin/student-sitin-history/:studentId', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+        
+        const { studentId } = req.params;
+        
+        try {
+            const stmt = db.prepare('SELECT * FROM sitin_records WHERE student_id = ? ORDER BY time_in DESC LIMIT 1');
+            stmt.bind([studentId]);
+            const results = [];
+            while (stmt.step()) {
+                results.push(stmt.getAsObject());
+            }
+            stmt.free();
+            res.json(results);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     // --- Admin: Get Student Remaining Sessions ---
     app.get('/api/admin/student-sessions', (req, res) => {
         const sessionId = req.cookies?.sessionId;
