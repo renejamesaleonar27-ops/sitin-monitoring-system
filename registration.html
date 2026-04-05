@@ -27,7 +27,7 @@
       <div class="regmain">
       </div>
       <section class="register">
-         <form class="register-form" action="/register" method="POST">
+          <form class="register-form" id="registration-form">
             <h1 style="margin-bottom:20px;">Register Account</h1>
             <div class="form-holder">
                <div>
@@ -99,7 +99,126 @@
                </div>
             </div>
          </form>
-      </section>
-      </section>
-   </body>
+       </section>
+
+       <!-- Success Modal -->
+       <div id="success-modal" class="modal" style="display: none;">
+           <div class="modal-content">
+               <h2>Registration Successful!</h2>
+               <p>Your account has been created successfully. You can now log in.</p>
+               <div class="modal-buttons">
+                   <button id="success-ok-btn" class="btn-confirm">OK</button>
+               </div>
+           </div>
+       </div>
+
+       <style>
+           .modal {
+               display: none;
+               position: fixed;
+               z-index: 1000;
+               left: 0;
+               top: 0;
+               width: 100%;
+               height: 100%;
+               background-color: rgba(0, 0, 0, 0.5);
+               justify-content: center;
+               align-items: center;
+           }
+           .modal-content {
+               background-color: #fff;
+               padding: 30px;
+               border-radius: 10px;
+               text-align: center;
+               box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+               max-width: 400px;
+               width: 90%;
+           }
+           .modal-content h2 {
+               margin-top: 0;
+               color: #333;
+           }
+           .modal-content p {
+               font-size: 16px;
+               color: #555;
+               margin-bottom: 25px;
+           }
+           .modal-buttons {
+               display: flex;
+               justify-content: center;
+               gap: 15px;
+           }
+           .btn-confirm {
+               padding: 10px 25px;
+               background-color: #28a745;
+               color: white;
+               border: none;
+               border-radius: 5px;
+               cursor: pointer;
+               font-size: 16px;
+               transition: background-color 0.3s;
+           }
+           .btn-confirm:hover {
+               background-color: #218838;
+           }
+       </style>
+
+       <script>
+           const form = document.getElementById('registration-form');
+           form.addEventListener('submit', async function(e) {
+               e.preventDefault();
+               
+               const password = document.getElementById('password').value;
+               const reppassword = document.getElementById('reppassword').value;
+               
+               if (password !== reppassword) {
+                   alert('Passwords do not match!');
+                   return;
+               }
+               
+               const formData = {
+                   idnumber: document.getElementById('idnumber').value,
+                   lastname: document.getElementById('lastname').value,
+                   firstname: document.getElementById('firstname').value,
+                   middlename: document.getElementById('middlename').value,
+                   courselevel: document.getElementById('courselevel').value,
+                   course: document.getElementById('course').value,
+                   address: document.getElementById('address').value,
+                   email: document.getElementById('email').value,
+                   password: password
+               };
+               
+               try {
+                   const response = await fetch('/register', {
+                       method: 'POST',
+                       headers: {
+                           'Content-Type': 'application/json'
+                       },
+                       body: JSON.stringify(formData)
+                   });
+                   
+                   if (response.ok) {
+                       document.getElementById('success-modal').style.display = 'flex';
+                   } else {
+                       const errorData = await response.json();
+                       alert('Registration failed: ' + (errorData.error || 'Unknown error'));
+                   }
+               } catch (error) {
+                   console.error('Error:', error);
+                   alert('An error occurred during registration.');
+               }
+           });
+           
+           document.getElementById('success-ok-btn').addEventListener('click', function() {
+               window.location.href = '/login.html';
+           });
+           
+           window.addEventListener('click', function(e) {
+               const modal = document.getElementById('success-modal');
+               if (e.target === modal) {
+                   modal.style.display = 'none';
+               }
+           });
+       </script>
+    </body>
 </html>

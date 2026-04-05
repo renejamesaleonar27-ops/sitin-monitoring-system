@@ -120,6 +120,21 @@ async function startServer() {
     saveDatabase();
     console.log('Sit-in records table ready.');
 
+    // --- Create the feedback table if not exists ---
+    db.run(`
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            student_name TEXT NOT NULL,
+            lab TEXT NOT NULL,
+            rating INTEGER NOT NULL,
+            feedback TEXT NOT NULL,
+            date DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    saveDatabase();
+    console.log('Feedback table ready.');
+
     // --- Registration Route ---
     app.post('/register', (req, res) => {
         const {
@@ -142,14 +157,14 @@ async function startServer() {
             );
             saveDatabase();
             console.log('New user registered:', idnumber);
-            res.redirect('/login.html');
+            res.json({ success: true });
         } catch (err) {
             console.error('Registration error:', err);
             const errorMessage = err.message || err.toString() || 'Unknown error';
             if (errorMessage.includes('UNIQUE constraint failed')) {
-                res.status(400).send('Registration failed: ID Number or Email already exists.');
+                res.status(400).json({ error: 'ID Number or Email already exists.' });
             } else {
-                res.status(500).send('Registration failed: ' + errorMessage);
+                res.status(500).json({ error: 'Registration failed: ' + errorMessage });
             }
         }
     });
@@ -207,8 +222,8 @@ async function startServer() {
         }
     });
 
-    // --- Update User Profile API ---
-    app.put('/api/profile', (req, res) => {
+    // --- Admin: Create Announcement ---
+    app.post('/api/admin/announcements', (req, res) => {
         const sessionId = req.cookies?.sessionId;
         
         if (!sessionId || !sessions[sessionId]) {
@@ -528,35 +543,53 @@ async function startServer() {
         }
     });
 
-    // --- Student: Get Own Sit-in History ---
-    app.get('/api/student/sitin-history', (req, res) => {
+    // --- Student: Submit Feedback ---
+    app.post('/api/student/feedback', (req, res) => {
         const sessionId = req.cookies?.sessionId;
         if (!sessionId || !sessions[sessionId]) {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
         const userId = sessions[sessionId].userId;
+        const { lab, rating, feedback } = req.body;
 
         try {
-            const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+            const userStmt = db.prepare('SELECT idnumber, firstname, lastname FROM users WHERE id = ?');
             userStmt.bind([userId]);
             
             if (userStmt.step()) {
                 const user = userStmt.getAsObject();
                 userStmt.free();
                 
-                const stmt = db.prepare('SELECT * FROM sitin_records WHERE student_id = ? ORDER BY time_in DESC LIMIT 20');
-                stmt.bind([user.idnumber]);
-                const results = [];
-                while (stmt.step()) {
-                    results.push(stmt.getAsObject());
-                }
-                stmt.free();
-                res.json(results);
+                const studentName = `${user.firstname} ${user.lastname}`;
+                db.run('INSERT INTO feedback (student_id, student_name, lab, rating, feedback) VALUES (?, ?, ?, ?, ?)',
+                    [user.idnumber, studentName, lab, rating, feedback]);
+                saveDatabase();
+                res.json({ success: true, message: 'Feedback submitted successfully' });
             } else {
                 userStmt.free();
-                res.json([]);
+                res.status(404).json({ error: 'User not found' });
             }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Get Feedback Reports ---
+    app.get('/api/admin/feedback', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        try {
+            const stmt = db.prepare('SELECT * FROM feedback ORDER BY date DESC');
+            const results = [];
+            while (stmt.step()) {
+                results.push(stmt.getAsObject());
+            }
+            stmt.free();
+            res.json(results);
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
