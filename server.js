@@ -121,17 +121,38 @@ async function startServer() {
     console.log('Sit-in records table ready.');
 
     // --- Create the feedback table if not exists ---
-    db.run(`
-        CREATE TABLE IF NOT EXISTS feedback (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            student_name TEXT NOT NULL,
-            lab TEXT NOT NULL,
-            rating INTEGER NOT NULL,
-            feedback TEXT NOT NULL,
-            date DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
+    // Check if old table exists with rating column
+    const tableInfo = db.exec("PRAGMA table_info(feedback)");
+    const hasRating = tableInfo.length > 0 && tableInfo[0].values.some(v => v[1] === 'rating');
+    
+    if (hasRating) {
+        // Migrate: rename old table, create new one without rating, copy data
+        db.run("ALTER TABLE feedback RENAME TO feedback_old");
+        db.run(`
+            CREATE TABLE feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL,
+                student_name TEXT NOT NULL,
+                lab TEXT NOT NULL,
+                feedback TEXT NOT NULL,
+                date DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        db.run("INSERT INTO feedback (id, student_id, student_name, lab, feedback, date) SELECT id, student_id, student_name, lab, feedback, date FROM feedback_old");
+        db.run("DROP TABLE feedback_old");
+    } else {
+        db.run(`
+            CREATE TABLE IF NOT EXISTS feedback (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL,
+                student_name TEXT NOT NULL,
+                lab TEXT NOT NULL,
+                feedback TEXT NOT NULL,
+                date DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+    }
+    
     saveDatabase();
     console.log('Feedback table ready.');
 
@@ -186,7 +207,7 @@ async function startServer() {
                 if (isMatch) {
                     const sessionId = crypto.randomBytes(32).toString('hex');
                     sessions[sessionId] = { userId: admin.id, idnumber: admin.username, isAdmin: true };
-                    res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 30 * 60 * 1000 }); // 30 minutes session
+res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sameSite: 'lax' }); // 30 minutes session
                     return res.redirect('/admin.html');
                 }
             }
@@ -222,8 +243,8 @@ async function startServer() {
         }
     });
 
-    // --- Admin: Create Announcement ---
-    app.post('/api/admin/announcements', (req, res) => {
+    // --- Admin: Update Profile ---
+    app.post('/api/admin/profile', (req, res) => {
         const sessionId = req.cookies?.sessionId;
         
         if (!sessionId || !sessions[sessionId]) {
@@ -351,7 +372,11 @@ async function startServer() {
     // --- Admin: Create Announcement ---
     app.post('/api/admin/announcements', (req, res) => {
         const sessionId = req.cookies?.sessionId;
+        console.log('Session ID:', sessionId);
+        console.log('Sessions:', sessions);
+        console.log('Body:', req.body);
         if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            console.log('Not authenticated as admin');
             return res.status(401).json({ error: 'Not authenticated as admin' });
         }
         
@@ -360,8 +385,10 @@ async function startServer() {
         try {
             db.run('INSERT INTO announcements (title, content) VALUES (?, ?)', [title, content]);
             saveDatabase();
+            console.log('Announcement created:', title);
             res.json({ success: true, message: 'Announcement created successfully' });
         } catch (err) {
+            console.error('Error creating announcement:', err);
             res.status(500).json({ error: err.message });
         }
     });
@@ -551,7 +578,7 @@ async function startServer() {
         }
 
         const userId = sessions[sessionId].userId;
-        const { lab, rating, feedback } = req.body;
+        const { lab, feedback } = req.body;
 
         try {
             const userStmt = db.prepare('SELECT idnumber, firstname, lastname FROM users WHERE id = ?');
@@ -562,14 +589,35 @@ async function startServer() {
                 userStmt.free();
                 
                 const studentName = `${user.firstname} ${user.lastname}`;
-                db.run('INSERT INTO feedback (student_id, student_name, lab, rating, feedback) VALUES (?, ?, ?, ?, ?)',
-                    [user.idnumber, studentName, lab, rating, feedback]);
+                db.run('INSERT INTO feedback (student_id, student_name, lab, feedback) VALUES (?, ?, ?, ?)',
+                    [user.idnumber, studentName, lab, feedback]);
                 saveDatabase();
                 res.json({ success: true, message: 'Feedback submitted successfully' });
             } else {
                 userStmt.free();
                 res.status(404).json({ error: 'User not found' });
             }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Get Statistics ---
+    app.get('/api/admin/stats', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        try {
+            const totalStudents = db.exec('SELECT COUNT(*) FROM users');
+            const totalSitins = db.exec('SELECT COUNT(*) FROM sitin_records');
+            const activeSessions = db.exec('SELECT COUNT(*) FROM sitin_records WHERE time_out IS NULL');
+            res.json({
+                totalStudents: totalStudents[0]?.values[0]?.[0] || 0,
+                totalSitins: totalSitins[0]?.values[0]?.[0] || 0,
+                activeSessions: activeSessions[0]?.values[0]?.[0] || 0
+            });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

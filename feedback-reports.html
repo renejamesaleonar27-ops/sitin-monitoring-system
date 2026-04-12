@@ -95,10 +95,6 @@
         tr:hover {
             background: #f5f5f5;
         }
-        .rating {
-            color: #f39c12;
-            font-weight: bold;
-        }
         .feedback-content {
             max-width: 300px;
             white-space: nowrap;
@@ -139,18 +135,6 @@
                 <h3>Total Feedback</h3>
                 <div class="number" id="total-feedback">0</div>
             </div>
-            <div class="stat-card">
-                <h3>Average Rating</h3>
-                <div class="number" id="average-rating">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Positive Feedback</h3>
-                <div class="number" id="positive-feedback">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Negative Feedback</h3>
-                <div class="number" id="negative-feedback">0</div>
-            </div>
         </div>
 
         <div class="filters">
@@ -163,14 +147,7 @@
                 <option value="Lab 542">Lab 542</option>
                 <option value="Lab 544">Lab 544</option>
             </select>
-            <select id="rating-filter" onchange="filterFeedback()">
-                <option value="">All Ratings</option>
-                <option value="5">5 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="3">3 Stars</option>
-                <option value="2">2 Stars</option>
-                <option value="1">1 Star</option>
-            </select>
+            
             <input type="date" id="date-filter" onchange="filterFeedback()">
         </div>
 
@@ -181,12 +158,11 @@
                     <th>Student ID</th>
                     <th>Student Name</th>
                     <th>Lab</th>
-                    <th>Rating</th>
                     <th>Feedback</th>
                 </tr>
             </thead>
             <tbody id="feedback-list">
-                <tr><td colspan="6">Loading feedback...</td></tr>
+                <tr><td colspan="4">Loading feedback...</td></tr>
             </tbody>
         </table>
     </div>
@@ -230,14 +206,14 @@
                 updateStats(allFeedback);
             } catch (error) {
                 console.error('Error loading feedback:', error);
-                document.getElementById('feedback-list').innerHTML = '<tr><td colspan="6">Error loading feedback</td></tr>';
+                document.getElementById('feedback-list').innerHTML = '<tr><td colspan="4">Error loading feedback</td></tr>';
             }
         }
 
         function displayFeedback(feedback) {
             const tbody = document.getElementById('feedback-list');
             if (feedback.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6">No feedback found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4">No feedback found</td></tr>';
                 return;
             }
             tbody.innerHTML = feedback.map(f => `
@@ -246,7 +222,6 @@
                     <td>${f.student_id}</td>
                     <td>${f.student_name}</td>
                     <td>${f.lab}</td>
-                    <td class="rating">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</td>
                     <td class="feedback-content" onclick="this.classList.toggle('expanded')">${f.feedback}</td>
                 </tr>
             `).join('');
@@ -254,28 +229,17 @@
 
         function updateStats(feedback) {
             const total = feedback.length;
-            const avgRating = total > 0 ? (feedback.reduce((sum, f) => sum + f.rating, 0) / total).toFixed(1) : 0;
-            const positive = feedback.filter(f => f.rating >= 4).length;
-            const negative = feedback.filter(f => f.rating <= 2).length;
-
             document.getElementById('total-feedback').textContent = total;
-            document.getElementById('average-rating').textContent = avgRating;
-            document.getElementById('positive-feedback').textContent = positive;
-            document.getElementById('negative-feedback').textContent = negative;
         }
 
         function filterFeedback() {
             const lab = document.getElementById('lab-filter').value;
-            const rating = document.getElementById('rating-filter').value;
             const date = document.getElementById('date-filter').value;
 
             let filtered = allFeedback;
 
             if (lab) {
                 filtered = filtered.filter(f => f.lab === lab);
-            }
-            if (rating) {
-                filtered = filtered.filter(f => f.rating === parseInt(rating));
             }
             if (date) {
                 filtered = filtered.filter(f => new Date(f.date).toISOString().startsWith(date));

@@ -20,7 +20,7 @@ background-position: center;">
                 
 
         <div class="links">
-            <a href="index.html">Home</a>
+            <a href="admin.html">Home</a>
             <a href="" onclick="showSearchModal()">Search</a>
             <a href="students.html">Students</a>
             <a href="" onclick="showSitInForm()">Sit-in</a>
@@ -100,12 +100,12 @@ background-position: center;">
                         <label for="sitin-lab">Lab Number</label>
                         <select id="sitin-lab" name="lab" required>
                             <option value="">Select Lab</option>
-                            <option value="Lab 1">Lab 524</option>
-                            <option value="Lab 2">Lab 526</option>
-                            <option value="Lab 3">Lab 528</option>
-                            <option value="Lab 4">Lab 530</option>
-                            <option value="Lab 5">Lab 542</option>
-                            <option value="Lab 6">Lab 544</option>
+                            <option value="Lab 524">Lab 524</option>
+                            <option value="Lab 526">Lab 526</option>
+                            <option value="Lab 528">Lab 528</option>
+                            <option value="Lab 530">Lab 530</option>
+                            <option value="Lab 542">Lab 542</option>
+                            <option value="Lab 544">Lab 544</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -242,12 +242,13 @@ background-position: center;">
                     body: JSON.stringify({ title, content }),
                     credentials: 'include'
                 });
-                if (response.ok) {
+                const data = await response.json();
+                if (response.ok && data.success) {
                     document.getElementById('announcement-form').reset();
                     loadAnnouncements();
                     alert('Announcement posted successfully!');
                 } else {
-                    alert('Error posting announcement');
+                    alert('Error posting announcement: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error posting announcement:', error);
@@ -256,6 +257,21 @@ background-position: center;">
         });
 
         // Load announcements on page load
+        loadAnnouncements();
+
+        // Load statistics
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/admin/stats', { credentials: 'include' });
+                const stats = await response.json();
+                document.getElementById('stat-total-students').textContent = stats.totalStudents || 0;
+                document.getElementById('stat-total-sitins').textContent = stats.totalSitins || 0;
+                document.getElementById('stat-active-sessions').textContent = stats.activeSessions || 0;
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+loadStatistics();
         loadAnnouncements();
 
         // Search student by ID

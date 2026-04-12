@@ -65,6 +65,22 @@
         .status-completed {
             color: #6c757d;
         }
+        .feedback-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .feedback-btn:hover {
+            background: #218838;
+        }
+        .feedback-done {
+            color: #6c757d;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -98,10 +114,11 @@
                     <th>Purpose</th>
                     <th>Sessions Used</th>
                     <th>Status</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody id="sitin-history-list">
-                <tr><td colspan="7">Loading history...</td></tr>
+                <tr><td colspan="8">Loading history...</td></tr>
             </tbody>
         </table>
     </div>
@@ -114,6 +131,30 @@
             <div class="modal-buttons">
                 <button id="confirm-logout" class="btn-confirm">Yes, Logout</button>
                 <button id="cancel-logout" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="modal">
+        <div class="modal-content">
+            <h2>Submit Feedback</h2>
+            <p>How was your sit-in experience?</p>
+            <textarea id="feedback-comment" placeholder="Enter your feedback here..." rows="4" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 15px; font-family: inherit; resize: vertical;"></textarea>
+            <div class="modal-buttons">
+                <button id="submit-feedback" class="btn-confirm">Submit</button>
+                <button id="cancel-feedback" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Success Modal -->
+    <div id="feedback-success-modal" class="modal">
+        <div class="modal-content">
+            <h2>Feedback Submitted!</h2>
+            <p>Thank you for your feedback.</p>
+            <div class="modal-buttons">
+                <button id="close-success-modal" class="btn-confirm">OK</button>
             </div>
         </div>
     </div>
@@ -153,15 +194,16 @@
                                 <td>${h.purpose}</td>
                                 <td>${h.sessions}</td>
                                 <td class="${h.time_out ? 'status-completed' : 'status-active'}">${h.time_out ? 'Completed' : 'Active'}</td>
+                                <td>${h.time_out ? `<button class="feedback-btn" data-id="${h.id}" data-lab="${h.lab}">Feedback</button>` : '-'}</td>
                             </tr>
                         `).join('');
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="7">No sit-in history found</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="8">No sit-in history found</td></tr>';
                     }
                 }
             } catch (error) {
                 console.error('Error fetching sit-in history:', error);
-                document.getElementById('sitin-history-list').innerHTML = '<tr><td colspan="7">Error loading history</td></tr>';
+                document.getElementById('sitin-history-list').innerHTML = '<tr><td colspan="8">Error loading history</td></tr>';
             }
         }
 
@@ -184,10 +226,75 @@
             document.getElementById('logout-modal').style.display = 'none';
         });
 
+        let currentFeedbackId = null;
+        let currentFeedbackLab = null;
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('feedback-btn')) {
+                currentFeedbackId = e.target.dataset.id;
+                currentFeedbackLab = e.target.dataset.lab;
+                document.getElementById('feedback-modal').style.display = 'flex';
+            }
+        });
+
+        document.getElementById('submit-feedback').addEventListener('click', async function() {
+            const comment = document.getElementById('feedback-comment').value.trim();
+            if (!comment) {
+                alert('Please enter your feedback');
+                return;
+            }
+            try {
+                const response = await fetch('/api/student/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lab: currentFeedbackLab, feedback: comment })
+                });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    document.getElementById('feedback-modal').style.display = 'none';
+                    document.getElementById('feedback-comment').value = '';
+                    document.getElementById('feedback-success-modal').style.display = 'flex';
+                    loadSitInHistory();
+                } else if (!response.ok) {
+                    alert(data.error || 'Failed to submit feedback');
+                } else {
+                    document.getElementById('feedback-modal').style.display = 'none';
+                    document.getElementById('feedback-comment').value = '';
+                    document.getElementById('feedback-success-modal').style.display = 'flex';
+                    loadSitInHistory();
+                }
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+                alert('Error submitting feedback');
+            }
+        });
+
+        document.getElementById('cancel-feedback').addEventListener('click', function() {
+            document.getElementById('feedback-modal').style.display = 'none';
+            document.getElementById('feedback-comment').value = '';
+            currentFeedbackId = null;
+            currentFeedbackLab = null;
+        });
+
+        document.getElementById('close-success-modal').addEventListener('click', function() {
+            document.getElementById('feedback-success-modal').style.display = 'none';
+        });
+
         window.addEventListener('click', function(e) {
-            const modal = document.getElementById('logout-modal');
-            if (e.target === modal) {
-                modal.style.display = 'none';
+            const logoutModal = document.getElementById('logout-modal');
+            const feedbackModal = document.getElementById('feedback-modal');
+            const feedbackSuccessModal = document.getElementById('feedback-success-modal');
+            if (e.target === logoutModal) {
+                logoutModal.style.display = 'none';
+            }
+            if (e.target === feedbackModal) {
+                feedbackModal.style.display = 'none';
+                document.getElementById('feedback-comment').value = '';
+                currentFeedbackId = null;
+                currentFeedbackLab = null;
+            }
+            if (e.target === feedbackSuccessModal) {
+                feedbackSuccessModal.style.display = 'none';
             }
         });
 
