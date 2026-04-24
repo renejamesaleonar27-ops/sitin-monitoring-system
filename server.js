@@ -104,6 +104,47 @@ async function startServer() {
     saveDatabase();
     console.log('Announcements table ready.');
 
+    // --- Create the notifications table if not exists ---
+    db.run(`
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            priority TEXT DEFAULT 'normal',
+            target_user_id INTEGER,
+            created_by INTEGER,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES admins(id),
+            FOREIGN KEY (target_user_id) REFERENCES users(id)
+        )
+    `);
+    saveDatabase();
+    console.log('Notifications table ready.');
+
+    // Add target_user_id column if it doesn't exist (for older DBs)
+    try {
+        db.run('ALTER TABLE notifications ADD COLUMN target_user_id INTEGER REFERENCES users(id)');
+        saveDatabase();
+        console.log('Added target_user_id column to notifications.');
+    } catch (e) {
+        // Column likely already exists, ignore
+    }
+
+    // --- Create the notification_reads table if not exists ---
+    db.run(`
+        CREATE TABLE IF NOT EXISTS notification_reads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            notification_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            read_at DATETIME,
+            FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            UNIQUE(notification_id, user_id)
+        )
+    `);
+    saveDatabase();
+    console.log('Notification reads table ready.');
+
     // --- Create the sitin_records table if not exists ---
     db.run(`
         CREATE TABLE IF NOT EXISTS sitin_records (
@@ -119,6 +160,28 @@ async function startServer() {
     `);
     saveDatabase();
     console.log('Sit-in records table ready.');
+
+    // --- Create the reservations table if not exists ---
+    db.run(`
+        CREATE TABLE IF NOT EXISTS reservations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            student_name TEXT NOT NULL,
+            purpose TEXT NOT NULL,
+            lab TEXT NOT NULL,
+            preferred_date TEXT NOT NULL,
+            preferred_time TEXT,
+            status TEXT DEFAULT 'pending',
+            admin_notes TEXT,
+            handled_by INTEGER,
+            handled_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (handled_by) REFERENCES admins(id),
+            FOREIGN KEY (student_id) REFERENCES users(idnumber)
+        )
+    `);
+    saveDatabase();
+    console.log('Reservations table ready.');
 
     // --- Create the feedback table if not exists ---
     // Check if old table exists with rating column
@@ -714,7 +777,7 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
         const { studentId, studentName, purpose, lab, sessions: sitinSessions } = req.body;
         
         try {
-            db.run(`INSERT INTO sitin_records (student_id, student_name, purpose, lab, sessions) VALUES (?, ?, ?, ?, ?)`,
+            db.run(`INSERT INTO sitin_records (student_id, student_name, purpose, lab, sessions, time_in) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
                 [studentId, studentName, purpose, lab, sitinSessions]);
             saveDatabase();
             res.json({ success: true, message: 'Sit-in record created successfully' });
@@ -769,30 +832,30 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
         if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
             return res.status(401).json({ error: 'Not authenticated as admin' });
         }
-        
+
         const { recordId } = req.body;
-        
+
         try {
             // Get the sit-in record to find the student
             const recordStmt = db.prepare('SELECT student_id, sessions FROM sitin_records WHERE id = ?');
             recordStmt.bind([recordId]);
-            
+
             if (recordStmt.step()) {
                 const record = recordStmt.getAsObject();
                 recordStmt.free();
-                
+
                 // Get the user_id from the students table
                 const userStmt = db.prepare('SELECT id FROM users WHERE idnumber = ?');
                 userStmt.bind([record.student_id]);
-                
+
                 if (userStmt.step()) {
                     const user = userStmt.getAsObject();
                     userStmt.free();
-                    
+
                     // Get current consumed sessions
                     const sessStmt = db.prepare('SELECT id, sessions FROM user_sessions WHERE user_id = ?');
                     sessStmt.bind([user.id]);
-                    
+
                     if (sessStmt.step()) {
                         const sessRecord = sessStmt.getAsObject();
                         sessStmt.free();
@@ -806,7 +869,7 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
                 } else {
                     userStmt.free();
                 }
-                
+
                 // Update the sit-in record: deduct 1 from sessions and set time_out
                 const newSessions = Math.max(0, record.sessions - 1);
                 db.run(`UPDATE sitin_records SET time_out = CURRENT_TIMESTAMP, sessions = ? WHERE id = ?`, [newSessions, recordId]);
@@ -814,9 +877,492 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
                 recordStmt.free();
                 db.run(`UPDATE sitin_records SET time_out = CURRENT_TIMESTAMP WHERE id = ?`, [recordId]);
             }
-            
+
             saveDatabase();
             res.json({ success: true, message: 'Sit-in ended successfully' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Create Reservation ---
+    app.post('/api/student/reservations', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+        const { purpose, lab, preferred_date, preferred_time } = req.body;
+
+        try {
+            // Get student info
+            const userStmt = db.prepare('SELECT idnumber, firstname, lastname FROM users WHERE id = ?');
+            userStmt.bind([userId]);
+
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+
+                const studentName = `${user.firstname} ${user.lastname}`;
+
+                db.run(`INSERT INTO reservations (student_id, student_name, purpose, lab, preferred_date, preferred_time)
+                        VALUES (?, ?, ?, ?, ?, ?)`,
+                    [user.idnumber, studentName, purpose, lab, preferred_date, preferred_time || '']);
+                saveDatabase();
+
+                res.json({ success: true, message: 'Reservation created successfully' });
+            } else {
+                userStmt.free();
+                res.status(404).json({ error: 'User not found' });
+            }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Get Own Reservations ---
+    app.get('/api/student/reservations', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+
+        try {
+            const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+            userStmt.bind([userId]);
+
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+
+                const stmt = db.prepare('SELECT * FROM reservations WHERE student_id = ? ORDER BY created_at DESC');
+                stmt.bind([user.idnumber]);
+                const results = [];
+                while (stmt.step()) {
+                    results.push(stmt.getAsObject());
+                }
+                stmt.free();
+                res.json(results);
+            } else {
+                userStmt.free();
+                res.json([]);
+            }
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Get All Reservations ---
+    app.get('/api/admin/reservations', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        try {
+            const stmt = db.prepare(`
+                SELECT r.*, u.email as student_email
+                FROM reservations r
+                LEFT JOIN users u ON r.student_id = u.idnumber
+                ORDER BY r.created_at DESC
+            `);
+            const results = [];
+            while (stmt.step()) {
+                results.push(stmt.getAsObject());
+            }
+            stmt.free();
+            res.json(results);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Accept Reservation ---
+    app.post('/api/admin/reservations/:id/accept', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        const { id } = req.params;
+        const adminId = sessions[sessionId].userId;
+        const { admin_notes } = req.body;
+
+        try {
+            // Get reservation details
+            const resStmt = db.prepare('SELECT student_id, purpose, lab, preferred_date FROM reservations WHERE id = ?');
+            resStmt.bind([id]);
+            if (!resStmt.step()) {
+                resStmt.free();
+                return res.status(404).json({ error: 'Reservation not found' });
+            }
+            const reservation = resStmt.getAsObject();
+            resStmt.free();
+
+            // Update reservation status
+            db.run(`UPDATE reservations SET status = 'accepted', handled_by = ?, handled_at = CURRENT_TIMESTAMP, admin_notes = ? WHERE id = ?`,
+                [adminId, admin_notes || '', id]);
+
+            // Get user id from student_id (idnumber)
+            const userStmt = db.prepare('SELECT id, firstname, lastname FROM users WHERE idnumber = ?');
+            userStmt.bind([reservation.student_id]);
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+
+                // Create notification for the student
+                const notifTitle = 'Reservation Accepted';
+                const notifMessage = `Your reservation for ${reservation.lab} on ${new Date(reservation.preferred_date).toLocaleDateString()} (${reservation.purpose}) has been accepted.${admin_notes ? ' Note: ' + admin_notes : ''}`;
+                db.run(`INSERT INTO notifications (title, message, priority, target_user_id, created_by) VALUES (?, ?, ?, ?, ?)`,
+                    [notifTitle, notifMessage, 'high', user.id, adminId]);
+            } else {
+                userStmt.free();
+            }
+
+            saveDatabase();
+            res.json({ success: true, message: 'Reservation accepted' });
+        } catch (err) {
+            console.error('Error accepting reservation:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Reject Reservation ---
+    app.post('/api/admin/reservations/:id/reject', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        const { id } = req.params;
+        const adminId = sessions[sessionId].userId;
+        const { admin_notes } = req.body;
+
+        try {
+            // Get reservation details
+            const resStmt = db.prepare('SELECT student_id, purpose, lab, preferred_date FROM reservations WHERE id = ?');
+            resStmt.bind([id]);
+            if (!resStmt.step()) {
+                resStmt.free();
+                return res.status(404).json({ error: 'Reservation not found' });
+            }
+            const reservation = resStmt.getAsObject();
+            resStmt.free();
+
+            // Update reservation status
+            db.run(`UPDATE reservations SET status = 'rejected', handled_by = ?, handled_at = CURRENT_TIMESTAMP, admin_notes = ? WHERE id = ?`,
+                [adminId, admin_notes || '', id]);
+
+            // Get user id from student_id
+            const userStmt = db.prepare('SELECT id, firstname, lastname FROM users WHERE idnumber = ?');
+            userStmt.bind([reservation.student_id]);
+            if (userStmt.step()) {
+                const user = userStmt.getAsObject();
+                userStmt.free();
+
+                // Create notification for the student
+                const notifTitle = 'Reservation Rejected';
+                const notifMessage = `Your reservation for ${reservation.lab} on ${new Date(reservation.preferred_date).toLocaleDateString()} (${reservation.purpose}) has been rejected.${admin_notes ? ' Reason: ' + admin_notes : ''}`;
+                db.run(`INSERT INTO notifications (title, message, priority, target_user_id, created_by) VALUES (?, ?, ?, ?, ?)`,
+                    [notifTitle, notifMessage, 'high', user.id, adminId]);
+            } else {
+                userStmt.free();
+            }
+
+            saveDatabase();
+            res.json({ success: true, message: 'Reservation rejected' });
+        } catch (err) {
+            console.error('Error rejecting reservation:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Delete Reservation ---
+    app.delete('/api/admin/reservations/:id', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        const { id } = req.params;
+
+        try {
+            db.run('DELETE FROM reservations WHERE id = ?', [id]);
+            saveDatabase();
+            res.json({ success: true, message: 'Reservation deleted' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Cancel Reservation ---
+    app.delete('/api/student/reservations/:id/cancel', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+        const { id } = req.params;
+
+        try {
+            // Verify the reservation belongs to this student
+            const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+            userStmt.bind([userId]);
+            if (!userStmt.step()) {
+                userStmt.free();
+                return res.status(404).json({ error: 'User not found' });
+            }
+            const user = userStmt.getAsObject();
+            userStmt.free();
+
+            // Check reservation exists and belongs to student
+            const resStmt = db.prepare('SELECT id, status FROM reservations WHERE id = ? AND student_id = ?');
+            resStmt.bind([id, user.idnumber]);
+
+            if (!resStmt.step()) {
+                resStmt.free();
+                return res.status(404).json({ error: 'Reservation not found or not authorized' });
+            }
+            const reservation = resStmt.getAsObject();
+            resStmt.free();
+
+            // Only allow cancellation of pending reservations
+            if (reservation.status !== 'pending') {
+                return res.status(400).json({ error: 'Cannot cancel a reservation that has been reviewed' });
+            }
+
+            db.run('DELETE FROM reservations WHERE id = ?', [id]);
+            saveDatabase();
+            res.json({ success: true, message: 'Reservation cancelled' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Get Notifications ---
+    app.get('/api/student/notifications', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+
+        try {
+            // Get notifications with read status for this user
+            // Include notifications that are either for all (target_user_id IS NULL) or specifically for this user
+            const stmt = db.prepare(`
+                SELECT n.*,
+                       CASE WHEN nr.read_at IS NULL THEN 0 ELSE 1 END as read
+                FROM notifications n
+                LEFT JOIN notification_reads nr ON n.id = nr.notification_id AND nr.user_id = ?
+                WHERE n.target_user_id IS NULL OR n.target_user_id = ?
+                ORDER BY n.created_at DESC
+                LIMIT 50
+            `);
+            stmt.bind([userId, userId]);
+            const results = [];
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                results.push({
+                    id: row.id,
+                    title: row.title,
+                    message: row.message,
+                    priority: row.priority,
+                    created_at: row.created_at,
+                    read: row.read === 1
+                });
+            }
+            stmt.free();
+            res.json(results);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Mark Notification as Read ---
+    app.post('/api/student/notifications/:id/read', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+        const { id } = req.params;
+
+        try {
+            // Check if notification exists
+            const notifStmt = db.prepare('SELECT id FROM notifications WHERE id = ?');
+            notifStmt.bind([id]);
+            if (!notifStmt.step()) {
+                notifStmt.free();
+                return res.status(404).json({ error: 'Notification not found' });
+            }
+            notifStmt.free();
+
+            // Insert or update read record
+            const checkStmt = db.prepare('SELECT id FROM notification_reads WHERE notification_id = ? AND user_id = ?');
+            checkStmt.bind([id, userId]);
+
+            if (checkStmt.step()) {
+                // Update existing
+                checkStmt.free();
+                db.run('UPDATE notification_reads SET read_at = CURRENT_TIMESTAMP WHERE notification_id = ? AND user_id = ?',
+                    [id, userId]);
+            } else {
+                checkStmt.free();
+                db.run('INSERT INTO notification_reads (notification_id, user_id, read_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                    [id, userId]);
+            }
+            saveDatabase();
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Mark All Notifications as Read ---
+    app.post('/api/student/notifications/read-all', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+
+        try {
+            // Get all unread notification IDs for this user (including targeted or broadcast)
+            const unreadStmt = db.prepare(`
+                SELECT n.id FROM notifications n
+                LEFT JOIN notification_reads nr ON n.id = nr.notification_id AND nr.user_id = ?
+                WHERE nr.id IS NULL AND (n.target_user_id IS NULL OR n.target_user_id = ?)
+            `);
+            unreadStmt.bind([userId, userId]);
+            const unreadIds = [];
+            while (unreadStmt.step()) {
+                unreadIds.push(unreadStmt.getAsObject().id);
+            }
+            unreadStmt.free();
+
+            // Insert read records for all unread
+            unreadIds.forEach(notifId => {
+                db.run('INSERT OR IGNORE INTO notification_reads (notification_id, user_id, read_at) VALUES (?, ?, CURRENT_TIMESTAMP)',
+                    [notifId, userId]);
+            });
+            saveDatabase();
+            res.json({ success: true, marked: unreadIds.length });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Student: Delete Notification (from personal view) ---
+    app.delete('/api/student/notifications/:id', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId]) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const userId = sessions[sessionId].userId;
+        const { id } = req.params;
+
+        try {
+            // Delete the read record (this removes it from user's view)
+            db.run('DELETE FROM notification_reads WHERE notification_id = ? AND user_id = ?', [id, userId]);
+            saveDatabase();
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Create Notification ---
+    app.post('/api/admin/notifications', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        const adminId = sessions[sessionId].userId;
+        const { title, message, priority } = req.body;
+
+        if (!title || !message) {
+            return res.status(400).json({ error: 'Title and message are required' });
+        }
+
+        try {
+            db.run('INSERT INTO notifications (title, message, priority, created_by) VALUES (?, ?, ?, ?)',
+                [title, message, priority || 'normal', adminId]);
+            saveDatabase();
+            res.json({ success: true, message: 'Notification sent to all users' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Get All Notifications ---
+    app.get('/api/admin/notifications', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        try {
+            const stmt = db.prepare(`
+                SELECT n.*, a.name as admin_name
+                FROM notifications n
+                LEFT JOIN admins a ON n.created_by = a.id
+                ORDER BY n.created_at DESC
+                LIMIT 100
+            `);
+            const results = [];
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                // Get recipient count
+                const countStmt = db.prepare('SELECT COUNT(*) as cnt FROM notification_reads WHERE notification_id = ?');
+                countStmt.bind([row.id]);
+                let count = 0;
+                if (countStmt.step()) {
+                    count = countStmt.getAsObject().cnt;
+                }
+                countStmt.free();
+
+                results.push({
+                    id: row.id,
+                    title: row.title,
+                    message: row.message,
+                    priority: row.priority,
+                    created_by: row.created_by,
+                    admin_name: row.admin_name,
+                    created_at: row.created_at,
+                    recipients: count
+                });
+            }
+            stmt.free();
+            res.json(results);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Admin: Delete Notification ---
+    app.delete('/api/admin/notifications/:id', (req, res) => {
+        const sessionId = req.cookies?.sessionId;
+        if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+            return res.status(401).json({ error: 'Not authenticated as admin' });
+        }
+
+        const { id } = req.params;
+
+        try {
+            // Delete notification (cascade will delete notification_reads)
+            db.run('DELETE FROM notifications WHERE id = ?', [id]);
+            saveDatabase();
+            res.json({ success: true, message: 'Notification deleted' });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

@@ -756,8 +756,39 @@ body.animated-bg {
   cursor: pointer;
 }
 .btn-danger:hover {
-  background: #c0392b;
+    background: #c0392b;
 }
+
+.btn-success {
+    padding: 10px 25px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.btn-success:hover {
+    background-color: #1e8449;
+}
+
+.btn-warning {
+    padding: 10px 25px;
+    background-color: #f39c12;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.btn-warning:hover {
+    background-color: #d68910;
+}
+
 
 /* About Page Styles */
 .about-section, .features-section, .developer-section, .contact-section {

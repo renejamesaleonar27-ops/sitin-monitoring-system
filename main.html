@@ -19,11 +19,11 @@ background-position: 100%; height: 100vh;">
                 
 
         <div class="links">
-            <a href="">Notification</a>
+            <a href="notification.html">Notification<span id="notif-badge" style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
             <a href="index.html">Home</a>
             <a href="" id="edit-profile-link">Edit Profile</a>
             <a href="history.html">History</a>
-            <a href="">Reservation</a>
+            <a href="reservation.html">Reservation</a>
             <a href="" id="logout-link">Logout</a>
             
         </div>
@@ -167,7 +167,7 @@ background-position: 100%; height: 100vh;">
             try {
                 const annResponse = await fetch('/api/announcements');
                 const announcements = await annResponse.json();
-                
+
                 const container = document.getElementById('announcements-container');
                 if (announcements.length > 0) {
                     container.innerHTML = announcements.map(a => `
@@ -180,6 +180,24 @@ background-position: 100%; height: 100vh;">
                 }
             } catch (error) {
                 console.error('Error fetching announcements:', error);
+            }
+
+            // Load unread notifications count
+            try {
+                const notifResponse = await fetch('/api/student/notifications');
+                if (notifResponse.ok) {
+                    const notifications = await notifResponse.json();
+                    const unreadCount = notifications.filter(n => !n.read).length;
+                    const badge = document.getElementById('notif-badge');
+                    if (unreadCount > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = unreadCount;
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching notifications count:', error);
             }
         });
 

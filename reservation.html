@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Reservation - Sit-in Monitoring System</title>
+    <style>
+        .reservation-container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .reservation-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .reservation-section h2 {
+            color: #1a5276;
+            border-bottom: 2px solid #1a5276;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 15px;
+            font-family: Tahoma;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1a5276;
+        }
+
+        .btn-submit {
+            background: #1a5276;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: Tahoma;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            background: #154360;
+        }
+
+        .btn-cancel-res {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-cancel-res:hover {
+            background: #c0392b;
+        }
+
+        .reservations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .reservation-card {
+            background: #f8f9fa;
+            border-left: 4px solid #1a5276;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .reservation-card.status-pending {
+            border-left-color: #f39c12;
+        }
+
+        .reservation-card.status-accepted {
+            border-left-color: #27ae60;
+        }
+
+        .reservation-card.status-rejected {
+            border-left-color: #e74c3c;
+        }
+
+        .reservation-info {
+            flex: 1;
+        }
+
+        .reservation-info h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .reservation-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .reservation-meta span {
+            margin-right: 10px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-pending .status-badge {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-accepted .status-badge {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected .status-badge {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .reservation-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .reservation-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .reservation-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body style="background-image: url(images/bg.jpg); background-size: cover; background-position: center; height: 100vh;">
+    <nav>
+        <div class="logo">
+            <div class="logo-holder"></div>
+            <img src="images/uc.png" alt="UCLOGO" height="90px" width="90px">
+            <P class="title">Dashboard
+        </div>
+
+        <div class="links">
+            <a href="notification.html">Notification</a>
+            <a href="main.html">Home</a>
+            <a href="" id="edit-profile-link">Edit Profile</a>
+            <a href="history.html">History</a>
+            <a href="reservation.html" class="active">Reservation</a>
+            <a href="" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="reservation-container">
+        <!-- Create Reservation Section -->
+        <div class="reservation-section">
+            <h2>Create New Reservation</h2>
+            <div id="message-area"></div>
+            <form id="reservation-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="purpose">Purpose</label>
+                        <select id="purpose" name="purpose" required>
+                            <option value="">Select Purpose</option>
+                            <option value="Coding">Coding</option>
+                            <option value="Research">Research</option>
+                            <option value="Assignment">Assignment</option>
+                            <option value="Printing">Printing</option>
+                            <option value="Internet">Internet</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="lab">Lab Number</label>
+                        <select id="lab" name="lab" required>
+                            <option value="">Select Lab</option>
+                            <option value="Lab 524">Lab 524</option>
+                            <option value="Lab 526">Lab 526</option>
+                            <option value="Lab 528">Lab 528</option>
+                            <option value="Lab 530">Lab 530</option>
+                            <option value="Lab 542">Lab 542</option>
+                            <option value="Lab 544">Lab 544</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preferred_date">Preferred Date</label>
+                        <input type="date" id="preferred_date" name="preferred_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="preferred_time">Preferred Time (Optional)</label>
+                        <input type="time" id="preferred_time" name="preferred_time">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit">Create Reservation</button>
+            </form>
+        </div>
+
+        <!-- My Reservations Section -->
+        <div class="reservation-section">
+            <h2>My Reservations</h2>
+            <div id="reservations-list" class="reservations-list">
+                <p>Loading reservations...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Reservation Modal -->
+    <div id="cancel-modal" class="modal">
+        <div class="modal-content">
+            <h2>Cancel Reservation</h2>
+            <p>Are you sure you want to cancel this reservation?</p>
+            <div class="modal-buttons">
+                <button id="confirm-cancel" class="btn-confirm">Yes, Cancel</button>
+                <button id="dont-cancel" class="btn-cancel">No</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let reservations = [];
+        let reservationToCancel = null;
+
+        // Load user reservations on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            loadReservations();
+            loadStudentInfo();
+        });
+
+        // Load student info
+        async function loadStudentInfo() {
+            try {
+                const response = await fetch('/api/current-user');
+                if (response.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const user = await response.json();
+                // Update any student-specific UI if needed
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        }
+
+        // Load reservations
+        async function loadReservations() {
+            try {
+                const response = await fetch('/api/student/reservations');
+                if (response.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                reservations = await response.json();
+                displayReservations();
+            } catch (error) {
+                console.error('Error loading reservations:', error);
+                document.getElementById('reservations-list').innerHTML =
+                    '<p class="error-message">Error loading reservations. Please try again.</p>';
+            }
+        }
+
+        // Display reservations
+        function displayReservations() {
+            const container = document.getElementById('reservations-list');
+
+            if (reservations.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>You have no reservations yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = reservations.map(r => `
+                <div class="reservation-card status-${r.status}">
+                    <div class="reservation-info">
+                        <h3>${r.purpose} - ${r.lab}</h3>
+                        <div class="reservation-meta">
+                            <span> Date: ${new Date(r.preferred_date).toLocaleDateString()}</span>
+                            ${r.preferred_time ? `<span> Time: ${r.preferred_time}</span>` : ''}
+                            <span> Status: <span class="status-badge">${r.status}</span></span>
+                            ${r.admin_notes ? `<span> Note: ${r.admin_notes}</span>` : ''}
+                            <span> Created: ${new Date(r.created_at).toLocaleString()}</span>
+                            ${r.handled_at ? `<span> Handled: ${new Date(r.handled_at).toLocaleString()}</span>` : ''}
+                        </div>
+                    </div>
+                    ${r.status === 'pending' ? `
+                        <div class="reservation-actions">
+                            <button class="btn-cancel-res" onclick="showCancelModal(${r.id})">Cancel</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Handle reservation form submission
+        document.getElementById('reservation-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const purpose = document.getElementById('purpose').value;
+            const lab = document.getElementById('lab').value;
+            const preferred_date = document.getElementById('preferred_date').value;
+            const preferred_time = document.getElementById('preferred_time').value;
+
+            // Validate date is in the future
+            const selectedDate = new Date(preferred_date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate < today) {
+                showMessage('Error', 'Please select a future date.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/student/reservations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ purpose, lab, preferred_date, preferred_time })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showMessage('Success', 'Reservation created successfully!');
+                    document.getElementById('reservation-form').reset();
+                    loadReservations();
+                } else {
+                    showMessage('Error', data.error || 'Failed to create reservation');
+                }
+            } catch (error) {
+                console.error('Error creating reservation:', error);
+                showMessage('Error', 'Failed to create reservation');
+            }
+        });
+
+        // Show cancel modal
+        function showCancelModal(reservationId) {
+            reservationToCancel = reservationId;
+            document.getElementById('cancel-modal').style.display = 'flex';
+        }
+
+        // Confirm cancel
+        document.getElementById('confirm-cancel').addEventListener('click', async function() {
+            if (reservationToCancel) {
+                try {
+                    const response = await fetch(`/api/student/reservations/${reservationToCancel}/cancel`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+
+                    if (response.ok && data.success) {
+                        showMessage('Success', 'Reservation cancelled');
+                        loadReservations();
+                    } else {
+                        showMessage('Error', data.error || 'Failed to cancel reservation');
+                    }
+                } catch (error) {
+                    console.error('Error cancelling reservation:', error);
+                    showMessage('Error', 'Failed to cancel reservation');
+                }
+            }
+            closeCancelModal();
+        });
+
+        // Don't cancel
+        document.getElementById('dont-cancel').addEventListener('click', closeCancelModal);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('cancel-modal');
+            if (e.target === modal) {
+                closeCancelModal();
+            }
+        });
+
+        function closeCancelModal() {
+            document.getElementById('cancel-modal').style.display = 'none';
+            reservationToCancel = null;
+        }
+
+        // Show message
+        function showMessage(title, message) {
+            const messageArea = document.getElementById('message-area');
+            const isError = title === 'Error';
+            messageArea.innerHTML = `
+                <div class="${isError ? 'error-message' : 'success-message'}">
+                    <strong>${title}:</strong> ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+
+        // Set minimum date to tomorrow
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('preferred_date').min = tomorrow.toISOString().split('T')[0];
+    </script>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logout Confirmation</h2>
+            <p>Are you sure you want to log out?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-confirm">Yes, Logout</button>
+                <button id="cancel-logout" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Success Modal -->
+    <div id="logout-success-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logged Out</h2>
+            <p>You have successfully logged out.</p>
+            <div class="modal-buttons">
+                <button id="logout-ok-btn" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle logout - show confirmation modal
+        document.getElementById('logout-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('logout-modal').style.display = 'flex';
+        });
+
+        // Confirm logout
+        document.getElementById('confirm-logout').addEventListener('click', async function() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                document.getElementById('logout-modal').style.display = 'none';
+                document.getElementById('logout-success-modal').style.display = 'flex';
+
+                document.getElementById('logout-ok-btn').addEventListener('click', function() {
+                    window.location.href = '/login.html';
+                });
+
+                // Auto-redirect after 2 seconds if user doesn't click
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
+            } catch (error) {
+                console.error('Error logging out:', error);
+            }
+        });
+
+        // Cancel logout
+        document.getElementById('cancel-logout').addEventListener('click', function() {
+            document.getElementById('logout-modal').style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('logout-modal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
