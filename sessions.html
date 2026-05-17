@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Sessions - Sit-in Monitoring System</title>
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            min-height: calc(100vh - 120px);
+        }
+        .page-header {
+            background: linear-gradient(135deg, #1a5276, #2980b9);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-family: Tahoma, sans-serif;
+        }
+        .sessions-table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .sessions-table th, .sessions-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .sessions-table th {
+            background: #1a5276;
+            color: white;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .sessions-table tr:hover {
+            background: #f5f5f5;
+        }
+        .status-active {
+            color: #e67e22;
+            font-weight: bold;
+        }
+        .status-completed {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-active {
+            background: #fdf3e7;
+            color: #e67e22;
+        }
+        .badge-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body style="background-image: url(images/bg.jpg); background-size: cover; background-position: center; min-height: 100vh;">
+    <nav>
+        <div class="logo">
+            <div class="logo-holder"></div>
+            <img src="images/uc.png" alt="UCLOGO" height="90px" width="90px">
+            <p class="title">Dashboard</p>
+        </div>
+        <div class="links">
+            <a href="notification.html">Notification<span id="notif-badge" style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
+            <a href="index.html">Home</a>
+            <a href="" id="edit-profile-link">Edit Profile</a>
+            <a href="sit-in-summary.html">Sit-In Summary</a>
+            <a href="sessions.html" class="active">Sessions</a>
+            <a href="history.html">History</a>
+            <a href="leaderboard.html">Leaderboard</a>
+            <a href="reservation.html">Reservation</a>
+            <a href="" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Sessions</h1>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="sessions-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Duration</th>
+                        <th>PC No.</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="sessions-list">
+                    <tr><td colspan="6" style="text-align:center; color:#999;">Loading sessions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logout Confirmation</h2>
+            <p>Are you sure you want to log out?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-confirm">Yes, Logout</button>
+                <button id="cancel-logout" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Success Modal -->
+    <div id="logout-success-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logged Out</h2>
+            <p>You have successfully logged out. Your session has been recorded.</p>
+            <p style="margin-top: 10px; font-size: 14px; color: #666;">Sessions remaining will be updated.</p>
+            <div class="modal-buttons">
+                <button id="logout-ok-btn" class="btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            try {
+                const response = await fetch('/api/current-user');
+                if (response.status === 401) { window.location.href = '/login.html'; return; }
+                const user = await response.json();
+                loadSessions();
+            } catch (err) {
+                console.error('Error:', err);
+            }
+
+            // Load unread notifications count
+            try {
+                const notifResponse = await fetch('/api/student/notifications');
+                if (notifResponse.ok) {
+                    const notifications = await notifResponse.json();
+                    const unreadCount = notifications.filter(n => !n.read).length;
+                    const badge = document.getElementById('notif-badge');
+                    if (unreadCount > 0) {
+                        badge.style.display = 'inline-block';
+                        badge.textContent = unreadCount;
+                    } else { badge.style.display = 'none'; }
+                }
+            } catch (err) { console.error('Error:', err); }
+        });
+
+        async function loadSessions() {
+            const tbody = document.getElementById('sessions-list');
+            try {
+                const res = await fetch('/api/student/sitin-history');
+                if (!res.ok) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No sessions found</td></tr>';
+                    return;
+                }
+                const records = await res.json();
+
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">No sessions found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = records.map(function (r) {
+                    var timeIn  = new Date(r.time_in);
+                    var dateStr = timeIn.toLocaleDateString();
+                    var inStr   = timeIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    var outStr  = '';
+                    var durStr  = '';
+                    var status  = '';
+                    if (r.time_out) {
+                        var timeOut = new Date(r.time_out);
+                        outStr = timeOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        var diffMin = (timeOut.getTime() - timeIn.getTime()) / (1000 * 60);
+                        var hrs = Math.floor(diffMin / 60);
+                        var mins = Math.round(diffMin % 60);
+                        if (hrs > 0) {
+                            durStr = hrs + ' hr' + (hrs > 1 ? 's' : '') + (mins > 0 ? ' ' + mins + ' min' : '');
+                        } else {
+                            durStr = mins + ' min';
+                        }
+                        status = '<span class="badge badge-completed">Completed</span>';
+                    } else {
+                        // Calculate duration up to now for active sessions
+                        var now = new Date();
+                        var diffMin = (now.getTime() - timeIn.getTime()) / (1000 * 60);
+                        var hrs = Math.floor(diffMin / 60);
+                        var mins = Math.round(diffMin % 60);
+                        if (hrs > 0) {
+                            durStr = hrs + ' hr' + (hrs > 1 ? 's' : '') + (mins > 0 ? ' ' + mins + ' min' : '') + ' (ongoing)';
+                        } else {
+                            durStr = mins + ' min (ongoing)';
+                        }
+                        outStr  = '&mdash;';
+                        status  = '<span class="badge badge-active">Active</span>';
+                    }
+
+                    var pcNo = r.lab || 'N/A';
+
+                    return '<tr>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + inStr  + '</td>' +
+                        '<td>' + outStr + '</td>' +
+                        '<td>' + durStr + '</td>' +
+                        '<td>' + pcNo   + '</td>' +
+                        '<td>' + status + '</td>' +
+                    '</tr>';
+                }).join('');
+            } catch (err) {
+                console.error('Error:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#e74c3c;">Error loading sessions</td></tr>';
+            }
+        }
+
+        // Logout handlers
+        document.getElementById('logout-link').addEventListener('click', function (e) { e.preventDefault(); document.getElementById('logout-modal').style.display = 'flex'; });
+        document.getElementById('confirm-logout').addEventListener('click', async function () {
+            try { await fetch('/api/logout', { method: 'POST' }); } catch (_) { }
+            document.getElementById('logout-modal').style.display = 'none';
+            document.getElementById('logout-success-modal').style.display = 'flex';
+            document.getElementById('logout-ok-btn').onclick = function () { window.location.href = '/login.html'; };
+            setTimeout(() => { window.location.href = '/login.html'; }, 2000);
+        });
+        document.getElementById('cancel-logout').addEventListener('click', function () { document.getElementById('logout-modal').style.display = 'none'; });
+        window.addEventListener('click', function (e) {
+            if (e.target.id === 'logout-modal') document.getElementById('logout-modal').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

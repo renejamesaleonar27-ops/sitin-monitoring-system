@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
+const multer = require('multer');
 
 const app = express();
 const PORT = 3000;
@@ -18,6 +19,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const DB_PATH = path.join(__dirname, 'sitin.db');
 
@@ -54,9 +56,18 @@ async function startServer() {
             address     TEXT,
             email       TEXT    NOT NULL UNIQUE,
             password    TEXT    NOT NULL,
+            profile_picture TEXT,
             created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+    
+    // Migration: Add profile_picture column if it doesn't exist (for existing databases)
+    try {
+        db.run('ALTER TABLE users ADD COLUMN profile_picture TEXT');
+    } catch (e) {
+        // Column already exists, ignore
+    }
+    
     saveDatabase();
     console.log('Users table ready.');
 
@@ -306,8 +317,24 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
         }
     });
 
-    // --- Admin: Update Profile ---
-    app.post('/api/admin/profile', (req, res) => {
+    // Multer config for profile picture uploads
+    const storage = multer.diskStorage({
+        destination: function(req, file, cb) {
+            const uploadDir = path.join(__dirname, 'uploads', 'profiles');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            cb(null, uploadDir);
+        },
+        filename: function(req, file, cb) {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, 'profile-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    });
+    const upload = multer({ storage: storage });
+
+    // --- Student: Update Profile ---
+    app.put('/api/profile', upload.single('profilePicture'), (req, res) => {
         const sessionId = req.cookies?.sessionId;
         
         if (!sessionId || !sessions[sessionId]) {
@@ -316,13 +343,28 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
 
         const userId = sessions[sessionId].userId;
         const { firstname, middlename, lastname, address, email } = req.body;
+        const profilePicture = req.file ? `/uploads/profiles/${req.file.filename}` : null;
         
         try {
-            db.run(`UPDATE users SET firstname = ?, middlename = ?, lastname = ?, address = ?, email = ? WHERE id = ?`,
-                [firstname, middlename || '', lastname, address || '', email, userId]);
+            let query = 'UPDATE users SET firstname = ?, middlename = ?, lastname = ?, address = ?, email = ?';
+            let params = [firstname, middlename || '', lastname, address || '', email];
+            
+            if (profilePicture) {
+                query += ', profile_picture = ?';
+                params.push(profilePicture);
+            }
+            
+            query += ' WHERE id = ?';
+            params.push(userId);
+            
+            db.run(query, params);
             saveDatabase();
             console.log(`User ${userId} updated their profile`);
-            res.json({ success: true, message: 'Profile updated successfully' });
+            const responseData = { success: true, message: 'Profile updated successfully' };
+            if (profilePicture) {
+                responseData.profile_picture = profilePicture;
+            }
+            res.json(responseData);
         } catch (err) {
             console.error('Error updating profile:', err);
             res.status(500).json({ error: err.message });
@@ -340,25 +382,74 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
         const userId = sessions[sessionId].userId;
         
         try {
-            const stmt = db.prepare('SELECT id, idnumber, lastname, firstname, middlename, courselevel, course, address, email FROM users WHERE id = ?');
+            const stmt = db.prepare('SELECT id, idnumber, lastname, firstname, middlename, courselevel, course, address, email, profile_picture FROM users WHERE id = ?');
             stmt.bind([userId]);
             
-            if (stmt.step()) {
+if (stmt.step()) {
                 const user = stmt.getAsObject();
                 stmt.free();
                 
                 // Get remaining sessions (30 - consumed)
                 const sessionStmt = db.prepare('SELECT COALESCE(SUM(sessions), 0) as consumedSessions FROM user_sessions WHERE user_id = ?');
                 sessionStmt.bind([userId]);
+                let consumedSessions = 0;
                 let remainingSessions = 30;
                 if (sessionStmt.step()) {
                     const result = sessionStmt.getAsObject();
-                    remainingSessions = Math.max(0, 30 - (result.consumedSessions || 0));
+                    consumedSessions = result.consumedSessions || 0;
+                    remainingSessions = Math.max(0, 30 - consumedSessions);
                 }
                 sessionStmt.free();
                 
-                user.totalSessions = remainingSessions;
-                res.json(user);
+                // Get session duration statistics from actual sit-in records
+                const userStmt = db.prepare('SELECT idnumber FROM users WHERE id = ?');
+                userStmt.bind([userId]);
+                if (userStmt.step()) {
+                    const userInfo = userStmt.getAsObject();
+                    userStmt.free();
+                    
+                    // Get completed sit-in records with both time_in and time_out
+                    const sitinStmt = db.prepare('SELECT time_in, time_out FROM sitin_records WHERE student_id = ? AND time_out IS NOT NULL');
+                    sitinStmt.bind([userInfo.idnumber]);
+                    
+                    let totalDuration = 0;
+                    let sessionCount = 0;
+                    let longestSession = 0;
+                    
+                    while (sitinStmt.step()) {
+                        const record = sitinStmt.getAsObject();
+                        const timeIn = new Date(record.time_in).getTime();
+                        const timeOut = new Date(record.time_out).getTime();
+                        const duration = (timeOut - timeIn) / (1000 * 60); // in minutes
+                        if (duration > 0) {
+                            totalDuration += duration;
+                            sessionCount++;
+                            if (duration > longestSession) {
+                                longestSession = duration;
+                            }
+                        }
+                    }
+                    sitinStmt.free();
+                    
+                    // Total accumulated hours from all sit-ins
+                    const totalAccumulatedHours = totalDuration / 60;
+                    // Average session duration
+                    const avgSessionHours = sessionCount > 0 ? (totalDuration / 60) / sessionCount : 0;
+                    
+                    user.totalSessions = remainingSessions;
+                    user.consumeSessions = consumedSessions; // Total sit-in sessions count
+                    user.totalSitInHours = Math.round(totalAccumulatedHours * 10) / 10; // Total accumulated hours
+                    user.avgSessionDuration = Math.round(avgSessionHours * 10) / 10; // Avg per session in hours
+                    user.longestSession = Math.round(longestSession / 60 * 10) / 10; // Longest in hours
+                    res.json(user);
+                } else {
+                    userStmt.free();
+                    user.totalSessions = remainingSessions;
+                    user.consumeSessions = consumedSessions;
+                    user.avgSessionDuration = 0;
+                    user.longestSession = 0;
+                    res.json(user);
+                }
             } else {
                 stmt.free();
                 res.status(404).json({ error: 'User not found' });
@@ -1363,6 +1454,75 @@ res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sa
             db.run('DELETE FROM notifications WHERE id = ?', [id]);
             saveDatabase();
             res.json({ success: true, message: 'Notification deleted' });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Community: Global Stats ---
+    app.get('/api/community-stats', (req, res) => {
+        try {
+            // Total completed sit-in sessions (records with time_out)
+            const totalStmt = db.prepare("SELECT COUNT(*) as cnt FROM sitin_records WHERE time_out IS NOT NULL");
+            let totalSessions = 0;
+            if (totalStmt.step()) { totalSessions = totalStmt.getAsObject().cnt; }
+            totalStmt.free();
+
+            // Distinct students who have completed at least one session
+            const activeStmt = db.prepare("SELECT COUNT(DISTINCT student_id) as cnt FROM sitin_records WHERE time_out IS NOT NULL");
+            let activeStudents = 0;
+            if (activeStmt.step()) { activeStudents = activeStmt.getAsObject().cnt; }
+            activeStmt.free();
+
+            // Total accumulated hours across all completed sessions
+            let totalMinutes = 0;
+            const hrsStmt = db.prepare("SELECT SUM((julianday(time_out) - julianday(time_in)) * 1440) as totalMin FROM sitin_records WHERE time_out IS NOT NULL");
+            if (hrsStmt.step()) { totalMinutes = hrsStmt.getAsObject().totalMin || 0; }
+            hrsStmt.free();
+            const totalHours = Math.round(totalMinutes / 60 * 10) / 10;
+
+            // Simple lab utilization: active sessions / 6 labs (max 30 PCs each, using 180 as baseline)
+            const activeStmt2 = db.prepare("SELECT COUNT(*) as cnt FROM sitin_records WHERE time_out IS NULL");
+            let activeNow = 0;
+            if (activeStmt2.step()) { activeNow = activeStmt2.getAsObject().cnt; }
+            activeStmt2.free();
+            const utilization = Math.round((activeNow / 180) * 100);
+
+            res.json({ totalSessions, activeStudents, utilization, totalHours });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Community: Leaderboard ---
+    app.get('/api/leaderboard', (req, res) => {
+        try {
+            const stmt = db.prepare(`
+                SELECT
+                    s.student_id,
+                    s.student_name,
+                    u.course,
+                    COUNT(s.id)                                      AS sessions,
+                    COALESCE(SUM((julianday(s.time_out) - julianday(s.time_in)) * 1440), 0) AS totalMin
+                FROM sitin_records s
+                LEFT JOIN users u ON s.student_id = u.idnumber
+                WHERE s.time_out IS NOT NULL
+                GROUP BY s.student_id
+                ORDER BY totalMin DESC
+                LIMIT 10
+            `);
+            const results = [];
+            while (stmt.step()) {
+                const row = stmt.getAsObject();
+                results.push({
+                    name:     row.student_name,
+                    course:   row.course     || 'Not set',
+                    sessions: row.sessions    || 0,
+                    hours:    Math.round(row.totalMin / 60 * 10) / 10
+                });
+            }
+            stmt.free();
+            res.json(results);
         } catch (err) {
             res.status(500).json({ error: err.message });
         }

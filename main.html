@@ -22,26 +22,31 @@ background-position: 100%; height: 100vh;">
             <a href="notification.html">Notification<span id="notif-badge" style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
             <a href="index.html">Home</a>
             <a href="" id="edit-profile-link">Edit Profile</a>
+            <a href="sit-in-summary.html">Sit-In Summary</a>
+            <a href="sessions.html">Sessions</a>
             <a href="history.html">History</a>
+            <a href="leaderboard.html">Leaderboard</a>
             <a href="reservation.html">Reservation</a>
             <a href="" id="logout-link">Logout</a>
-            
         </div>
     </nav>
     <div class="main2">
         <div class="student-info">
             <h1>Student Information</h1>
             <div class="stud-prof">
-                    <img src="images/makoysirkol.png " alt="stud-prof">
+                    <img id="dashboard-profile-pic" src="images/profile.webp " alt="stud-prof">
             </div>
-            <div class="info">
+<div class="info">
             <p id="student-name"><span>👤Name:</span> Loading...</p>
             <p id="student-course"><span>🎓Course:</span> Loading...</p>
             <p id="student-year"><span>👤Year:</span> Loading...</p>
             <p id="student-email"><span>✉️Email:</span> Loading...</p>
             <p id="student-address"><span>🏠Address:</span> Loading...</p>
             <p id="student-sessions"><span>⏳Session:</span> Loading...</p>
-            </div>
+            <p id="student-sit-in-hours"><span>⏰Total Sit-in Hours in Total:</span> Loading...</p>
+            <p id="avg-session-duration"><span>⏱️Average Session Duration:</span> Loading...</p>
+            <p id="longest-session"><span>🏆Longest Session Hours Been Use:</span> Loading...</p>
+        </div>
         </div>
 
         <div class="announcement">
@@ -110,6 +115,11 @@ background-position: 100%; height: 100vh;">
         <div class="modal-content">
             <h2>Edit Profile</h2>
             <form id="edit-profile-form">
+                <div class="profile-pic-upload">
+                    <img id="profile-preview" src="images/makoysirkol.png" alt="Profile Preview" class="profile-preview">
+                    <label for="profile-picture" class="upload-btn">Change Photo</label>
+                    <input type="file" id="profile-picture" name="profilePicture" accept="image/*">
+                </div>
                 <div class="form-group">
                     <label for="edit-firstname">First Name</label>
                     <input type="text" id="edit-firstname" name="firstname" required>
@@ -149,16 +159,25 @@ background-position: 100%; height: 100vh;">
                     return;
                 }
                 
-                const user = await response.json();
+const user = await response.json();
                 
                 // Update the DOM with user data
-                const fullName = `${user.firstname} ${user.middlename ? user.middlename + ' ' : ''}${user.lastname}`;
+                const fullName = `${user.firstname || ''} ${user.middlename ? user.middlename + ' ' : ''}${user.lastname || ''}`;
                 document.getElementById('student-name').innerHTML = `<span>👤Name:</span> ${fullName}`;
-                document.getElementById('student-course').innerHTML = `<span>🎓Course:</span> ${user.course}`;
-                document.getElementById('student-year').innerHTML = `<span>👤Year:</span> ${user.courselevel}`;
-                document.getElementById('student-email').innerHTML = `<span>✉️Email:</span> ${user.email}`;
+                document.getElementById('student-course').innerHTML = `<span>🎓Course:</span> ${user.course || ''}`;
+                document.getElementById('student-year').innerHTML = `<span>👤Year:</span> ${user.courselevel || ''}`;
+                document.getElementById('student-email').innerHTML = `<span>✉️Email:</span> ${user.email || ''}`;
                 document.getElementById('student-address').innerHTML = `<span>🏠Address:</span> ${user.address || 'N/A'}`;
                 document.getElementById('student-sessions').innerHTML = `<span>⏳Session:</span> ${user.totalSessions || 0}`;
+                document.getElementById('student-sit-in-hours').innerHTML = `<span>⏰Total Sit-in Hours in Total:</span> ${user.totalSitInHours || 0} hr`;
+                document.getElementById('avg-session-duration').innerHTML = `<span>⏱️Average Session Duration:</span> ${user.avgSessionDuration || 0} hr`;
+                document.getElementById('longest-session').innerHTML = `<span>🏆Longest Session Hours Been Use:</span> ${user.longestSession || 0} hr`;
+                
+                // Update profile picture on dashboard
+                const profilePic = document.getElementById('dashboard-profile-pic');
+                if (user.profile_picture) {
+                    profilePic.src = user.profile_picture;
+                }
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
@@ -261,9 +280,29 @@ background-position: 100%; height: 100vh;">
                 document.getElementById('edit-address').value = currentUserData.address || '';
                 document.getElementById('edit-email').value = currentUserData.email || '';
                 
+                // Set profile picture preview
+                const profilePreview = document.getElementById('profile-preview');
+                if (currentUserData.profile_picture) {
+                    profilePreview.src = currentUserData.profile_picture;
+                } else {
+                    profilePreview.src = 'images/makoysirkol.png';
+                }
+                
                 document.getElementById('edit-profile-modal').style.display = 'flex';
             } catch (error) {
                 console.error('Error fetching user data:', error);
+            }
+        });
+
+        // Profile picture preview
+        document.getElementById('profile-picture').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-preview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
             }
         });
 
@@ -271,21 +310,22 @@ background-position: 100%; height: 100vh;">
         document.getElementById('edit-profile-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const formData = {
-                firstname: document.getElementById('edit-firstname').value,
-                middlename: document.getElementById('edit-middlename').value,
-                lastname: document.getElementById('edit-lastname').value,
-                address: document.getElementById('edit-address').value,
-                email: document.getElementById('edit-email').value
-            };
+            const formData = new FormData();
+            formData.append('firstname', document.getElementById('edit-firstname').value || '');
+            formData.append('middlename', document.getElementById('edit-middlename').value || '');
+            formData.append('lastname', document.getElementById('edit-lastname').value || '');
+            formData.append('address', document.getElementById('edit-address').value || '');
+            formData.append('email', document.getElementById('edit-email').value || '');
+            
+            const profilePicInput = document.getElementById('profile-picture');
+            if (profilePicInput.files && profilePicInput.files[0]) {
+                formData.append('profilePicture', profilePicInput.files[0]);
+            }
             
             try {
                 const response = await fetch('/api/profile', {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
+                    body: formData
                 });
                 
                 const result = await response.json();
@@ -294,10 +334,21 @@ background-position: 100%; height: 100vh;">
                     document.getElementById('edit-profile-modal').style.display = 'none';
                     
                     // Refresh user data display
-                    const fullName = `${formData.firstname} ${formData.middlename ? formData.middlename + ' ' : ''}${formData.lastname}`;
+                    const firstName = document.getElementById('edit-firstname').value || '';
+                    const middleName = document.getElementById('edit-middlename').value || '';
+                    const lastName = document.getElementById('edit-lastname').value || '';
+                    const fullName = `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`;
+                    const email = document.getElementById('edit-email').value || '';
+                    const address = document.getElementById('edit-address').value || '';
+                    
                     document.getElementById('student-name').innerHTML = `<span>👤Name:</span> ${fullName}`;
-                    document.getElementById('student-email').innerHTML = `<span>✉️Email:</span> ${formData.email}`;
-                    document.getElementById('student-address').innerHTML = `<span>🏠Address:</span> ${formData.address || 'N/A'}`;
+                    document.getElementById('student-email').innerHTML = `<span>✉️Email:</span> ${email}`;
+                    document.getElementById('student-address').innerHTML = `<span>🏠Address:</span> ${address || 'N/A'}`;
+                    
+                    // Update profile picture on dashboard if changed
+                    if (result.profile_picture) {
+                        document.querySelector('.stud-prof img').src = result.profile_picture;
+                    }
                 } else {
                     alert('Error: ' + result.error);
                 }
