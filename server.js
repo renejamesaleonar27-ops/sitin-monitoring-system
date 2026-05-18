@@ -866,7 +866,12 @@ app.get('/api/admin/sitin-records', async (req, res) => {
     }
     
     try {
-        const results = await all('SELECT * FROM sitin_records ORDER BY time_in DESC');
+        const results = await all(`
+            SELECT s.*, u.profile_picture 
+            FROM sitin_records s 
+            LEFT JOIN users u ON s.student_id = u.idnumber 
+            ORDER BY s.time_in DESC
+        `);
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -881,7 +886,13 @@ app.get('/api/admin/current-sitin', async (req, res) => {
     }
     
     try {
-        const results = await all('SELECT * FROM sitin_records WHERE time_out IS NULL ORDER BY time_in DESC');
+        const results = await all(`
+            SELECT s.*, u.profile_picture 
+            FROM sitin_records s 
+            LEFT JOIN users u ON s.student_id = u.idnumber 
+            WHERE s.time_out IS NULL 
+            ORDER BY s.time_in DESC
+        `);
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -1118,7 +1129,7 @@ app.get('/api/admin/reservations', async (req, res) => {
 
     try {
         const results = await all(`
-            SELECT r.*, u.email as student_email
+            SELECT r.*, u.email as student_email, u.profile_picture
             FROM reservations r
             LEFT JOIN users u ON r.student_id = u.idnumber
             ORDER BY r.created_at DESC

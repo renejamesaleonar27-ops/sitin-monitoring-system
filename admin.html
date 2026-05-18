@@ -717,7 +717,14 @@ loadStatistics();
             tbody.innerHTML = records.map(r => `
                 <tr style="border-bottom: 1px solid #ddd;">
                     <td style="padding: 10px;">${r.student_id}</td>
-                    <td style="padding: 10px;">${r.student_name}</td>
+                    <td style="padding: 10px; vertical-align: middle;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="${r.profile_picture || 'images/profile.webp'}" 
+                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" 
+                                 onerror="this.src='images/profile.webp'">
+                            <span>${r.student_name}</span>
+                        </div>
+                    </td>
                     <td style="padding: 10px;">${r.lab}</td>
                     <td style="padding: 10px; font-weight: bold; color: #1a5276;">${r.pc_number || '-'}</td>
                     <td style="padding: 10px;">${r.purpose}</td>
@@ -857,7 +864,14 @@ loadStatistics();
             tbody.innerHTML = filtered.map(r => `
                 <tr style="border-bottom: 1px solid #ddd;">
                     <td style="padding: 10px;">${r.id}</td>
-                    <td style="padding: 10px;">${r.student_name}</td>
+                    <td style="padding: 10px; vertical-align: middle;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="${r.profile_picture || 'images/profile.webp'}" 
+                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" 
+                                 onerror="this.src='images/profile.webp'">
+                            <span>${r.student_name}</span>
+                        </div>
+                    </td>
                     <td style="padding: 10px;">${r.student_id}</td>
                     <td style="padding: 10px;">${r.purpose}</td>
                     <td style="padding: 10px;">${r.lab}</td>
@@ -1337,5 +1351,6 @@ loadStatistics();
             }
         });
     </script>
-    </body>
+        <script src="script.js"></script>
+</body>
 </html>
