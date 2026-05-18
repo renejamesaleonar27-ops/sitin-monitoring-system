@@ -15,6 +15,9 @@ const SESSION_SECRET = crypto.randomBytes(32).toString('hex');
 // In-memory session store
 const sessions = {};
 
+// Global promise to track DB initialization state
+let dbInitialized;
+
 // --- Middleware ---
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -29,6 +32,9 @@ app.use('/uploads', express.static(uploadsDir));
 
 // --- Dynamic Session Hydration Middleware ---
 app.use(async (req, res, next) => {
+    if (dbInitialized) {
+        await dbInitialized;
+    }
     const sessionId = req.cookies?.sessionId;
     if (sessionId && !sessions[sessionId]) {
         try {
@@ -358,7 +364,7 @@ async function initDb() {
     console.log('Database initialized successfully.');
 }
 
-initDb().catch(err => {
+dbInitialized = initDb().catch(err => {
     console.error('Error during database initialization:', err);
 });
 
