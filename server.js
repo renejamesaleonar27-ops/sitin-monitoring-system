@@ -20,6 +20,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 const uploadsDir = process.env.VERCEL
     ? '/tmp/uploads'
