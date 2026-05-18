@@ -667,7 +667,7 @@ app.get('/api/admin/students', async (req, res) => {
     }
     
     try {
-        const students = await all('SELECT id, idnumber, firstname, middlename, lastname, course, courselevel, email FROM users ORDER BY lastname');
+        const students = await all('SELECT id, idnumber, firstname, middlename, lastname, course, courselevel, email, profile_picture FROM users ORDER BY lastname');
         for (let student of students) {
             const sessResult = await get('SELECT COALESCE(SUM(sessions), 0) as consumed FROM user_sessions WHERE user_id = ?', [student.id]);
             student.remainingSessions = Math.max(0, 30 - (sessResult?.consumed || 0));
