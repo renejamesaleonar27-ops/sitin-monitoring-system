@@ -438,7 +438,14 @@
                     <tr>
                         <td style="font-weight: bold; color: #2c3e50;">${dateStr}</td>
                         <td style="font-weight: bold; color: #1a5276;">${r.student_id}</td>
-                        <td>${r.student_name}</td>
+                        <td style="vertical-align: middle;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <img src="${r.profile_picture || 'images/profile.webp'}" 
+                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" 
+                                     onerror="this.src='images/profile.webp'">
+                                <span>${r.student_name}</span>
+                            </div>
+                        </td>
                         <td>${r.lab}</td>
                         <td style="font-weight: bold; color: #2980b9;">${r.pc_number || '-'}</td>
                         <td>${r.purpose}</td>

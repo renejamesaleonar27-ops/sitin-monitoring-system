@@ -208,21 +208,28 @@
                 updateStats(allFeedback);
             } catch (error) {
                 console.error('Error loading feedback:', error);
-                document.getElementById('feedback-list').innerHTML = '<tr><td colspan="4">Error loading feedback</td></tr>';
+                document.getElementById('feedback-list').innerHTML = '<tr><td colspan="5">Error loading feedback</td></tr>';
             }
         }
 
         function displayFeedback(feedback) {
             const tbody = document.getElementById('feedback-list');
             if (feedback.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4">No feedback found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5">No feedback found</td></tr>';
                 return;
             }
             tbody.innerHTML = feedback.map(f => `
                 <tr>
                     <td>${new Date(f.date).toLocaleDateString()}</td>
                     <td>${f.student_id}</td>
-                    <td>${f.student_name}</td>
+                    <td style="vertical-align: middle;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <img src="${f.profile_picture || 'images/profile.webp'}" 
+                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" 
+                                 onerror="this.src='images/profile.webp'">
+                            <span>${f.student_name}</span>
+                        </div>
+                    </td>
                     <td>${f.lab}</td>
                     <td class="feedback-content" onclick="this.classList.toggle('expanded')">${f.feedback}</td>
                 </tr>

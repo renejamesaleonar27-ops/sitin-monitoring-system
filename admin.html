@@ -155,6 +155,13 @@
         <div id="sitin-modal" class="modal">
             <div class="modal-content">
                 <h2><i class="fa-solid fa-square-plus"></i> New Sit-in Record</h2>
+                
+                <!-- Dynamic Profile Picture Preview -->
+                <div id="sitin-profile-container" style="display: none; text-align: center; margin-bottom: 20px;">
+                    <img id="sitin-profile-pic" src="images/profile.webp" 
+                         style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #1a5276; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                </div>
+
                 <form id="sitin-form">
                     <div class="form-group">
                         <label for="sitin-student-id">Student ID</label>
@@ -596,13 +603,21 @@ loadStatistics();
                 });
                 const data = await response.json();
 
-                if (data.found) {
+                 if (data.found) {
                     // Student found - open sit-in form with pre-filled data
                     closeSearchModal();
                     document.getElementById('sitin-student-id').value = data.student.idnumber;
                     const fullName = `${data.student.firstname} ${data.student.middlename || ''} ${data.student.lastname}`.trim();
                     document.getElementById('sitin-student-name').value = fullName;
                     document.getElementById('sitin-pc').value = '';
+                    
+                    // Display profile picture
+                    const profilePic = document.getElementById('sitin-profile-pic');
+                    const profileContainer = document.getElementById('sitin-profile-container');
+                    if (profilePic && profileContainer) {
+                        profilePic.src = data.student.profile_picture || 'images/profile.webp';
+                        profileContainer.style.display = 'block';
+                    }
                     
                     // Get remaining sessions from user_sessions table
                     fetchStudentSessions(data.student.idnumber);
@@ -615,6 +630,13 @@ loadStatistics();
                     document.getElementById('sitin-student-name').value = '';
                     document.getElementById('sitin-pc').value = '';
                     document.getElementById('sitin-sessions').value = 30;
+                    
+                    // Hide profile picture preview for manual entry
+                    const profileContainer = document.getElementById('sitin-profile-container');
+                    if (profileContainer) {
+                        profileContainer.style.display = 'none';
+                    }
+                    
                     showAlert('Not Found', 'Student not found. You can still create a sit-in record.');
                     document.getElementById('sitin-modal').style.display = 'flex';
                 }
@@ -666,6 +688,13 @@ loadStatistics();
             document.getElementById('sitin-lab').value = '';
             document.getElementById('sitin-pc').value = '';
             document.getElementById('sitin-sessions').value = '30';
+            
+            // Hide profile picture container for manual form entry
+            const profileContainer = document.getElementById('sitin-profile-container');
+            if (profileContainer) {
+                profileContainer.style.display = 'none';
+            }
+            
             document.getElementById('sitin-modal').style.display = 'flex';
         }
 

@@ -1541,3 +1541,168 @@ i.fa-solid, i.fas, i.far, i.fab {
 i.fa-solid:hover, i.fas:hover, i.far:hover {
     transform: scale(1.1);
 }
+
+/* ==========================================================================
+   COMPLETE MOBILE RESPONSIVENESS AND MULTI-SCREEN SCALING ENGINE
+   ========================================================================== */
+
+/* Universal Responsive Table Wrapper Utility */
+.table-wrapper, .tab-content, .panel, table {
+  width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+@media (max-width: 992px) {
+  .main {
+    flex-direction: column !important;
+    gap: 30px !important;
+    padding: 20px !important;
+  }
+  .left, .right {
+    width: 100% !important;
+    height: auto !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 10px !important;
+  }
+  .right p {
+    width: 100% !important;
+    font-size: 20px !important;
+  }
+  .right h1 {
+    font-size: 45px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Global Layout Paddings */
+  .container, .admin-container {
+    padding: 15px 10px !important;
+    width: 100% !important;
+  }
+
+  /* Responsive Navigation System */
+  nav {
+    flex-direction: column !important;
+    height: auto !important;
+    padding: 15px 10px !important;
+    gap: 15px !important;
+    border-radius: 8px !important;
+  }
+  .logo {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+  .title {
+    padding: 0 !important;
+    text-align: center !important;
+    width: auto !important;
+    font-size: 18px !important;
+    margin-top: 5px !important;
+  }
+  .links {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px 20px !important;
+    padding-left: 0 !important;
+    width: 100% !important;
+  }
+  .links a {
+    font-size: 14px !important;
+  }
+
+  /* Student Dashboard Card Wrapping */
+  .main2 {
+    flex-direction: column !important;
+    padding-left: 5px !important;
+    padding-right: 5px !important;
+    gap: 15px !important;
+  }
+  .main2 .student-info,
+  .main2 .announcement,
+  .main2 .rules-reg {
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    border-radius: 12px !important;
+  }
+  
+  .stud-prof {
+    height: 200px !important;
+    width: 200px !important;
+    margin-top: 10px !important;
+  }
+
+  /* Admin Header */
+  .admin-header {
+    flex-direction: column !important;
+    gap: 10px !important;
+    text-align: center !important;
+    padding: 15px !important;
+    border-radius: 8px !important;
+  }
+  .admin-header h1 {
+    font-size: 22px !important;
+  }
+
+  /* Floating Action Buttons / Theme Toggle */
+  #theme-toggle-container {
+    bottom: 15px !important;
+    right: 15px !important;
+  }
+  #theme-toggle-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+  }
+
+  /* Modal Adaptations */
+  .modal-content {
+    padding: 20px !important;
+    width: 92% !important;
+    max-width: 95% !important;
+    margin: 10px auto !important;
+    border-radius: 8px !important;
+  }
+
+  /* Table styling enhancements on mobile screens */
+  table {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Authentication Forms */
+  .login, .register {
+    padding: 10px !important;
+    height: auto !important;
+    min-height: 100vh !important;
+  }
+  .login-form, .register-form {
+    padding: 20px 15px !important;
+    width: 98% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    border-radius: 12px !important;
+  }
+  .login-form h1, .register-form h1 {
+    font-size: 24px !important;
+    margin-bottom: 20px !important;
+  }
+  .right h1 {
+    font-size: 28px !important;
+  }
+  .right p {
+    font-size: 15px !important;
+  }
+  .left img {
+    height: 180px !important;
+    width: 180px !important;
+  }
+}

@@ -754,7 +754,12 @@ app.get('/api/admin/feedback', async (req, res) => {
     }
 
     try {
-        const results = await all('SELECT * FROM feedback ORDER BY date DESC');
+        const results = await all(`
+            SELECT f.*, u.profile_picture 
+            FROM feedback f
+            LEFT JOIN users u ON f.student_id = u.idnumber
+            ORDER BY f.date DESC
+        `);
         res.json(results);
     } catch (err) {
         res.status(500).json({ error: err.message });
