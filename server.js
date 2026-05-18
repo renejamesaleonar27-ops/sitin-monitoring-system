@@ -20,7 +20,11 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+const uploadsDir = process.env.VERCEL
+    ? '/tmp/uploads'
+    : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsDir));
 
 // Initialize Turso/LibSQL Client
 const client = createClient({
@@ -382,7 +386,9 @@ app.post('/login', async (req, res) => {
 // Multer config for profile picture uploads
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
-        const uploadDir = path.join(__dirname, 'uploads', 'profiles');
+        const uploadDir = process.env.VERCEL
+            ? '/tmp/uploads/profiles'
+            : path.join(__dirname, 'uploads', 'profiles');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
