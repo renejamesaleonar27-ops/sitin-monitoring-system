@@ -152,7 +152,6 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 70px; text-align: center;">Photo</th>
                     <th>ID Number</th>
                     <th>Name</th>
                     <th>Course</th>
@@ -164,7 +163,7 @@
                 </tr>
             </thead>
             <tbody id="students-list">
-                <tr><td colspan="9">Loading students...</td></tr>
+                <tr><td colspan="8">Loading students...</td></tr>
             </tbody>
         </table>
     </div>
@@ -202,11 +201,11 @@
         async function displayStudents(students) {
             const tbody = document.getElementById('students-list');
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9">No students found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8">No students found</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = '<tr><td colspan="9">Loading sit-in data...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8">Loading sit-in data...</td></tr>';
 
             const studentsWithHistory = await Promise.all(students.map(async (s) => {
                 try {
@@ -221,13 +220,15 @@
 
             tbody.innerHTML = studentsWithHistory.map(s => `
                 <tr>
-                    <td style="text-align: center; vertical-align: middle;">
-                        <img src="${s.profile_picture || 'images/profile.webp'}" 
-                             alt="profile" 
-                             style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 2px 5px rgba(0,0,0,0.1); vertical-align: middle;">
-                    </td>
                     <td>${s.idnumber}</td>
-                    <td>${s.firstname} ${s.middlename || ''} ${s.lastname}</td>
+                    <td style="vertical-align: middle;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${s.profile_picture || 'images/profile.webp'}" 
+                                 alt="profile" 
+                                 style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 2px 4px rgba(0,0,0,0.1); vertical-align: middle;">
+                            <span>${s.firstname} ${s.middlename || ''} ${s.lastname}</span>
+                        </div>
+                    </td>
                     <td>${s.course}</td>
                     <td>${s.courselevel}</td>
                     <td>${s.email}</td>
