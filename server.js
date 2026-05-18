@@ -26,6 +26,11 @@ const uploadsDir = process.env.VERCEL
     : path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsDir));
 
+// --- Root / Homepage Route ---
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Initialize Turso/LibSQL Client
 const client = createClient({
     url: process.env.TURSO_DATABASE_URL || 'file:sitin.db',
@@ -1440,6 +1445,16 @@ app.delete('/api/admin/software/:id', async (req, res) => {
         res.json({ success: true, message: 'Software deleted successfully' });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// --- HTML Page Router (Fallback for serverless Vercel) ---
+app.get('/:page.html', (req, res) => {
+    const filePath = path.join(__dirname, `${req.params.page}.html`);
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send('Page not found');
     }
 });
 
