@@ -81,5 +81,9 @@
 
 // Legacy/original script helper if any page expects it
 function goToMain(){
-    location.href = "main.html";
+    location.href = "registration.html";
+}
+
+function goToRegister(){
+    location.href = "registration.html";
 }
