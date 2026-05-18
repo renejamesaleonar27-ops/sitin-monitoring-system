@@ -27,6 +27,26 @@ const uploadsDir = process.env.VERCEL
     : path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsDir));
 
+// --- Dynamic Session Hydration Middleware ---
+app.use(async (req, res, next) => {
+    const sessionId = req.cookies?.sessionId;
+    if (sessionId && !sessions[sessionId]) {
+        try {
+            const dbSession = await get('SELECT * FROM sessions WHERE session_id = ?', [sessionId]);
+            if (dbSession) {
+                sessions[sessionId] = {
+                    userId: dbSession.user_id,
+                    idnumber: dbSession.idnumber,
+                    isAdmin: dbSession.is_admin === 1
+                };
+            }
+        } catch (err) {
+            console.error('Session hydration error:', err);
+        }
+    }
+    next();
+});
+
 // --- Root / Homepage Route ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -323,6 +343,18 @@ async function initDb() {
         }
         console.log('Seeded default laboratory software.');
     }
+
+    // 12. sessions table for serverless persistence
+    await run(`
+        CREATE TABLE IF NOT EXISTS sessions (
+            session_id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            idnumber TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     console.log('Database initialized successfully.');
 }
 
@@ -373,6 +405,8 @@ app.post('/login', async (req, res) => {
             if (isMatch) {
                 const sessionId = crypto.randomBytes(32).toString('hex');
                 sessions[sessionId] = { userId: admin.id, idnumber: admin.username, isAdmin: true };
+                await run('INSERT INTO sessions (session_id, user_id, idnumber, is_admin) VALUES (?, ?, ?, 1)',
+                    [sessionId, admin.id, admin.username]);
                 res.cookie('sessionId', sessionId, { httpOnly: false, maxAge: 30 * 60 * 1000, sameSite: 'lax' });
                 return res.redirect('/admin.html');
             }
@@ -390,6 +424,8 @@ app.post('/login', async (req, res) => {
 
             const sessionId = crypto.randomBytes(32).toString('hex');
             sessions[sessionId] = { userId: user.id, idnumber: user.idnumber };
+            await run('INSERT INTO sessions (session_id, user_id, idnumber, is_admin) VALUES (?, ?, ?, 0)',
+                [sessionId, user.id, user.idnumber]);
             
             res.cookie('sessionId', sessionId, { httpOnly: true, maxAge: 30 * 60 * 1000 });
             res.redirect('/main.html');
@@ -515,9 +551,16 @@ app.post('/api/logout', async (req, res) => {
     const sessionId = req.cookies?.sessionId;
     let userId = null;
     
-    if (sessionId && sessions[sessionId]) {
-        userId = sessions[sessionId].userId;
-        delete sessions[sessionId];
+    if (sessionId) {
+        try {
+            await run('DELETE FROM sessions WHERE session_id = ?', [sessionId]);
+        } catch (err) {
+            console.error('Error deleting session from DB:', err);
+        }
+        if (sessions[sessionId]) {
+            userId = sessions[sessionId].userId;
+            delete sessions[sessionId];
+        }
     }
     
     if (userId) {
