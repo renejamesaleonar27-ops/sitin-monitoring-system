@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Sit-in Records - CCS Sit-in Monitoring</title>
     <style>
         body {
@@ -101,7 +102,7 @@
         }
     </style>
 </head>
-<body>
+<body class="global-bg">
     <nav>
         <div class="logo">
             <div class="logo-holder"></div>
@@ -109,16 +110,18 @@
             <P class="title">CCS Sit-in Monitoring System
         </div>
         <div class="links">
-            <a href="admin.html">Home</a>
+            <a href="admin.html">Dashboard</a>
             <a href="students.html">Students</a>
-            <a href="sit-in-records.html">Sit-in Records</a>
+            <a href="sit-in-records.html" class="active">Sit-in Records</a>
+            <a href="sitin-reports.html">Sit-in Reports</a>
+            <a href="feedback-reports.html">Feedback Reports</a>
             <a href="login.html">Logout</a>
         </div>
     </nav>
 
     <div class="page-container">
         <div class="page-header">
-            <h1>📋 Sit-in Records</h1>
+            <h1><i class="fa-solid fa-list-check"></i> Sit-in Records</h1>
             <a href="admin.html" class="back-btn">Back to Dashboard</a>
         </div>
 
@@ -135,6 +138,7 @@
                         <th>Student ID</th>
                         <th>Name</th>
                         <th>Lab</th>
+                        <th>PC Number</th>
                         <th>Purpose</th>
                         <th>Sessions</th>
                         <th>Time In</th>
@@ -143,7 +147,7 @@
                     </tr>
                 </thead>
                 <tbody id="current-records">
-                    <tr><td colspan="8">Loading...</td></tr>
+                    <tr><td colspan="9">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -156,6 +160,7 @@
                         <th>Student ID</th>
                         <th>Name</th>
                         <th>Lab</th>
+                        <th>PC Number</th>
                         <th>Purpose</th>
                         <th>Sessions</th>
                         <th>Time In</th>
@@ -164,7 +169,7 @@
                     </tr>
                 </thead>
                 <tbody id="all-records">
-                    <tr><td colspan="8">Loading...</td></tr>
+                    <tr><td colspan="9">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -209,7 +214,7 @@
         function displayCurrentRecords(records) {
             const tbody = document.getElementById('current-records');
             if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8">No active sit-in records</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9">No active sit-in records</td></tr>';
                 return;
             }
             tbody.innerHTML = records.map(r => `
@@ -217,6 +222,7 @@
                     <td>${r.student_id}</td>
                     <td>${r.student_name}</td>
                     <td>${r.lab}</td>
+                    <td style="font-weight: bold; color: #1a5276;">${r.pc_number || '-'}</td>
                     <td>${r.purpose}</td>
                     <td>${r.sessions}</td>
                     <td>${new Date(r.time_in).toLocaleString()}</td>
@@ -244,7 +250,7 @@
         function displayAllRecords(records) {
             const tbody = document.getElementById('all-records');
             if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8">No sit-in records</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9">No sit-in records</td></tr>';
                 return;
             }
             tbody.innerHTML = records.map(r => `
@@ -252,6 +258,7 @@
                     <td>${r.student_id}</td>
                     <td>${r.student_name}</td>
                     <td>${r.lab}</td>
+                    <td style="font-weight: bold; color: #1a5276;">${r.pc_number || '-'}</td>
                     <td>${r.purpose}</td>
                     <td>${r.sessions}</td>
                     <td>${new Date(r.time_in).toLocaleString()}</td>

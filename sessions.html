@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Sessions - Sit-in Monitoring System</title>
     <style>
         .container {
@@ -12,6 +14,7 @@
             padding: 30px 20px;
             min-height: calc(100vh - 120px);
         }
+
         .page-header {
             background: linear-gradient(135deg, #1a5276, #2980b9);
             color: white;
@@ -22,11 +25,13 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .page-header h1 {
             margin: 0;
             font-size: 28px;
             font-family: Tahoma, sans-serif;
         }
+
         .sessions-table {
             width: 100%;
             background: white;
@@ -35,11 +40,14 @@
             overflow: hidden;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        .sessions-table th, .sessions-table td {
+
+        .sessions-table th,
+        .sessions-table td {
             padding: 15px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
+
         .sessions-table th {
             background: #1a5276;
             color: white;
@@ -47,17 +55,21 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
         .sessions-table tr:hover {
             background: #f5f5f5;
         }
+
         .status-active {
             color: #e67e22;
             font-weight: bold;
         }
+
         .status-completed {
             color: #27ae60;
             font-weight: bold;
         }
+
         .badge {
             display: inline-block;
             padding: 4px 10px;
@@ -65,17 +77,22 @@
             font-size: 12px;
             font-weight: 600;
         }
+
         .badge-active {
             background: #fdf3e7;
             color: #e67e22;
         }
+
         .badge-completed {
             background: #d4edda;
             color: #155724;
         }
     </style>
 </head>
-<body style="background-image: url(images/bg.jpg); background-size: cover; background-position: center; min-height: 100vh;">
+
+<body
+    style="background-image: url(images/bg.jpg); background-size: cover; background-position: center; min-height: 100vh;"
+    class="global-bg">
     <nav>
         <div class="logo">
             <div class="logo-holder"></div>
@@ -83,9 +100,10 @@
             <p class="title">Dashboard</p>
         </div>
         <div class="links">
-            <a href="notification.html">Notification<span id="notif-badge" style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
-            <a href="index.html">Home</a>
-            <a href="" id="edit-profile-link">Edit Profile</a>
+            <a href="notification.html">Notification<span id="notif-badge"
+                    style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
+            <a href="main.html">Home</a>
+            <a href="main.html?edit=true" id="edit-profile-link">Edit Profile</a>
             <a href="sit-in-summary.html">Sit-In Summary</a>
             <a href="sessions.html" class="active">Sessions</a>
             <a href="history.html">History</a>
@@ -113,7 +131,9 @@
                     </tr>
                 </thead>
                 <tbody id="sessions-list">
-                    <tr><td colspan="6" style="text-align:center; color:#999;">Loading sessions...</td></tr>
+                    <tr>
+                        <td colspan="6" style="text-align:center; color:#999;">Loading sessions...</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -185,13 +205,13 @@
                 }
 
                 tbody.innerHTML = records.map(function (r) {
-                    var timeIn  = new Date(r.time_in);
+                    var timeIn = new Date(r.time_in);
                     var dateStr = timeIn.toLocaleDateString();
-                    var inStr   = timeIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    var inStr = timeIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                    var outStr  = '';
-                    var durStr  = '';
-                    var status  = '';
+                    var outStr = '';
+                    var durStr = '';
+                    var status = '';
                     if (r.time_out) {
                         var timeOut = new Date(r.time_out);
                         outStr = timeOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -215,20 +235,20 @@
                         } else {
                             durStr = mins + ' min (ongoing)';
                         }
-                        outStr  = '&mdash;';
-                        status  = '<span class="badge badge-active">Active</span>';
+                        outStr = '&mdash;';
+                        status = '<span class="badge badge-active">Active</span>';
                     }
 
                     var pcNo = r.lab || 'N/A';
 
                     return '<tr>' +
                         '<td>' + dateStr + '</td>' +
-                        '<td>' + inStr  + '</td>' +
+                        '<td>' + inStr + '</td>' +
                         '<td>' + outStr + '</td>' +
                         '<td>' + durStr + '</td>' +
-                        '<td>' + pcNo   + '</td>' +
+                        '<td>' + pcNo + '</td>' +
                         '<td>' + status + '</td>' +
-                    '</tr>';
+                        '</tr>';
                 }).join('');
             } catch (err) {
                 console.error('Error:', err);
@@ -251,4 +271,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Students List - CCS Sit-in Monitoring</title>
     <style>
         body {
@@ -76,12 +77,47 @@
             background: #1a5276;
             color: white;
         }
-        tr:hover {
-            background: #f5f5f5;
+        .btn-reset {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-reset:hover {
+            background: #c0392b;
+        }
+        .btn-reset-all {
+            background: #e74c3c;
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-reset-all:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+        .btn-reset-all:active {
+            transform: translateY(1px);
         }
     </style>
 </head>
-<body>
+<body class="global-bg">
     <nav>
         <div class="logo">
             <div class="logo-holder"></div>
@@ -89,17 +125,24 @@
             <P class="title">CCS Sit-in Monitoring System
         </div>
         <div class="links">
-            <a href="admin.html">Home</a>
-            <a href="students.html">Students</a>
+            <a href="admin.html">Dashboard</a>
+            <a href="students.html" class="active">Students</a>
             <a href="sit-in-records.html">Sit-in Records</a>
+            <a href="sitin-reports.html">Sit-in Reports</a>
+            <a href="feedback-reports.html">Feedback Reports</a>
             <a href="login.html">Logout</a>
         </div>
     </nav>
 
     <div class="page-container">
         <div class="page-header">
-            <h1>👥 All Students</h1>
-            <a href="admin.html" class="back-btn">Back to Dashboard</a>
+            <h1><i class="fa-solid fa-users"></i> All Students</h1>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button class="btn-reset-all" onclick="resetAllSessions()">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Reset All Sessions
+                </button>
+                <a href="admin.html" class="back-btn">Back to Dashboard</a>
+            </div>
         </div>
 
         <div class="search-box">
@@ -116,10 +159,11 @@
                     <th>Email</th>
                     <th>Remaining Sessions</th>
                     <th>Recent Sit-in</th>
+                    <th style="text-align: center;">Actions</th>
                 </tr>
             </thead>
             <tbody id="students-list">
-                <tr><td colspan="7">Loading students...</td></tr>
+                <tr><td colspan="8">Loading students...</td></tr>
             </tbody>
         </table>
     </div>
@@ -157,11 +201,11 @@
         async function displayStudents(students) {
             const tbody = document.getElementById('students-list');
             if (students.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7">No students found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8">No students found</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = '<tr><td colspan="7">Loading sit-in data...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8">Loading sit-in data...</td></tr>';
 
             const studentsWithHistory = await Promise.all(students.map(async (s) => {
                 try {
@@ -183,8 +227,66 @@
                     <td>${s.email}</td>
                     <td>${s.remainingSessions !== undefined ? s.remainingSessions : 30}</td>
                     <td>${s.recentSitIn}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-reset" onclick="resetStudentSessions('${s.idnumber}')">
+                            <i class="fa-solid fa-rotate-left"></i> Reset Sessions
+                        </button>
+                    </td>
                 </tr>
             `).join('');
+        }
+
+        async function resetStudentSessions(idnumber) {
+            if (!confirm(`Are you sure you want to reset remaining sessions to 30 for student ${idnumber}?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/reset-sessions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ idnumber })
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message || 'Sessions reset successfully!');
+                    loadStudents();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to reset sessions'));
+                }
+            } catch (err) {
+                console.error('Error resetting sessions:', err);
+                alert('An error occurred while resetting sessions.');
+            }
+        }
+
+        async function resetAllSessions() {
+            if (!confirm("⚠️ WARNING: Are you sure you want to reset remaining sessions back to 30 for ALL students? This action cannot be undone.")) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/reset-all-sessions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message || 'All sessions reset successfully!');
+                    loadStudents();
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to reset sessions'));
+                }
+            } catch (err) {
+                console.error('Error resetting all sessions:', err);
+                alert('An error occurred while resetting sessions.');
+            }
         }
 
         function formatSitInDate(isoString) {

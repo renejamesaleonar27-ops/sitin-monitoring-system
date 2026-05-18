@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Sit-In Summary - Sit-in Monitoring System</title>
     <style>
         .container {
@@ -12,6 +14,7 @@
             padding: 30px 20px;
             min-height: calc(100vh - 120px);
         }
+
         .page-header {
             background: linear-gradient(135deg, #1a5276, #2980b9);
             color: white;
@@ -19,16 +22,19 @@
             border-radius: 10px;
             margin-bottom: 25px;
         }
+
         .page-header h1 {
             margin: 0;
             font-size: 28px;
             font-family: Tahoma, sans-serif;
         }
+
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
             gap: 25px;
         }
+
         .summary-card {
             background: white;
             border-radius: 12px;
@@ -37,20 +43,24 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             transition: transform 0.25s, box-shadow 0.25s;
         }
+
         .summary-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
+
         .summary-card .summary-icon {
             font-size: 42px;
             margin-bottom: 12px;
         }
+
         .summary-card .summary-value {
             font-size: 36px;
             font-weight: 800;
             color: #1a5276;
             margin-bottom: 6px;
         }
+
         .summary-card .summary-label {
             font-size: 14px;
             color: #666;
@@ -60,7 +70,10 @@
         }
     </style>
 </head>
-<body style="background-image: url(images/bg.jpg); background-size: cover; background-position: center; min-height: 100vh;">
+
+<body
+    style="background-image: url(images/bg.jpg); background-size: cover; background-position: center; min-height: 100vh;"
+    class="global-bg">
     <nav>
         <div class="logo">
             <div class="logo-holder"></div>
@@ -68,9 +81,10 @@
             <p class="title">Dashboard</p>
         </div>
         <div class="links">
-            <a href="notification.html">Notification<span id="notif-badge" style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
-            <a href="index.html">Home</a>
-            <a href="" id="edit-profile-link">Edit Profile</a>
+            <a href="notification.html">Notification<span id="notif-badge"
+                    style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
+            <a href="main.html">Home</a>
+            <a href="main.html?edit=true" id="edit-profile-link">Edit Profile</a>
             <a href="sit-in-summary.html" class="active">Sit-In Summary</a>
             <a href="sessions.html">Sessions</a>
             <a href="history.html">History</a>
@@ -87,22 +101,22 @@
 
         <div class="summary-grid">
             <div class="summary-card" id="card-total-hours">
-                <div class="summary-icon">⏰</div>
+                <div class="summary-icon"><i class="fa-solid fa-clock"></i></div>
                 <div class="summary-value" id="val-total-hours">--</div>
                 <div class="summary-label">Total Sit-in Hours</div>
             </div>
             <div class="summary-card" id="card-sessions">
-                <div class="summary-icon">⏳</div>
+                <div class="summary-icon"><i class="fa-solid fa-hourglass-half"></i></div>
                 <div class="summary-value" id="val-sessions">--</div>
                 <div class="summary-label">Number of Sessions</div>
             </div>
             <div class="summary-card" id="card-avg">
-                <div class="summary-icon">⏱️</div>
+                <div class="summary-icon"><i class="fa-solid fa-stopwatch"></i></div>
                 <div class="summary-value" id="val-avg">--</div>
                 <div class="summary-label">Average Session Duration</div>
             </div>
             <div class="summary-card" id="card-longest">
-                <div class="summary-icon">🏆</div>
+                <div class="summary-icon"><i class="fa-solid fa-trophy"></i></div>
                 <div class="summary-value" id="val-longest">--</div>
                 <div class="summary-label">Longest Session Hours</div>
             </div>
@@ -142,15 +156,15 @@
                 // Number of Sessions = totalSessions (remaining) + consumeSessions (used)
                 // Alternatively simply use the user data's totalSessions (remaining quota 30-)
                 // Use userStore: totalSessions = remaining sessions; consumeSessions = finished sessions
-                const totalHours       = user.totalSitInHours      ?? 0;
-                const totalSessions    = user.consumeSessions       ?? 0; // finished session count
-                const avgDuration      = user.avgSessionDuration    ?? 0;
-                const longestHours     = user.longestSession        ?? 0;
+                const totalHours = user.totalSitInHours ?? 0;
+                const totalSessions = user.consumeSessions ?? 0; // finished session count
+                const avgDuration = user.avgSessionDuration ?? 0;
+                const longestHours = user.longestSession ?? 0;
 
                 document.getElementById('val-total-hours').textContent = `${totalHours} hr`;
-                document.getElementById('val-sessions').textContent    = totalSessions;
-                document.getElementById('val-avg').textContent         = `${avgDuration} hr`;
-                document.getElementById('val-longest').textContent     = `${longestHours} hr`;
+                document.getElementById('val-sessions').textContent = totalSessions;
+                document.getElementById('val-avg').textContent = `${avgDuration} hr`;
+                document.getElementById('val-longest').textContent = `${longestHours} hr`;
             } catch (err) {
                 console.error('Error:', err);
             }
@@ -187,4 +201,5 @@
         });
     </script>
 </body>
+
 </html>

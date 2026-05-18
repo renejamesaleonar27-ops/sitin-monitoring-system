@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Sit-in Reports - CCS Sit-in Monitoring</title>
+    <style>
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #1a5276, #2980b9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .back-btn {
+            background: white;
+            color: #1a5276;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .back-btn:hover {
+            background: #f0f3f4;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            border-top: 4px solid #1a5276;
+        }
+        .metric-card.active-sessions {
+            border-top-color: #27ae60;
+        }
+        .metric-card.completed {
+            border-top-color: #2980b9;
+        }
+        .metric-card h3 {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .metric-card .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 10px;
+        }
+
+        .filter-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #dcdde1;
+            border-radius: 5px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .filter-group select:focus, .filter-group input:focus {
+            border-color: #1a5276;
+        }
+
+        .export-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-top: 1px solid #f1f2f6;
+            padding-top: 15px;
+        }
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 5px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .btn-export:active {
+            transform: scale(0.97);
+        }
+        .btn-csv {
+            background: #27ae60;
+        }
+        .btn-csv:hover {
+            background: #219653;
+        }
+        .btn-excel {
+            background: #2ecc71;
+        }
+        .btn-excel:hover {
+            background: #27ae60;
+        }
+        .btn-print {
+            background: #2980b9;
+        }
+        .btn-print:hover {
+            background: #2471a3;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f1f2f6;
+            font-size: 14px;
+        }
+        th {
+            background: #1a5276;
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-active {
+            background: #e8f8f5;
+            color: #27ae60;
+        }
+        .status-ended {
+            background: #f2f3f4;
+            color: #7f8c8d;
+        }
+
+        /* Print Layout Customization */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            nav, .page-header, .filter-panel, .metrics-grid, .btn-export {
+                display: none !important;
+            }
+            .page-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .table-container {
+                box-shadow: none !important;
+                border: 1px solid #ccc;
+            }
+            table th {
+                background: #1a5276 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            /* Add print header */
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 30px;
+            }
+            .print-header h1 {
+                margin: 5px 0;
+                font-size: 22px;
+                color: #1a5276;
+            }
+            .print-header p {
+                margin: 2px 0;
+                color: #555;
+                font-size: 13px;
+            }
+        }
+        .print-header {
+            display: none;
+        }
+    </style>
+</head>
+<body class="global-bg">
+    <!-- Print Header Only Seen in Printed layout -->
+    <div class="print-header">
+        <img src="images/uc.png" alt="UC LOGO" height="60px" style="margin-bottom: 5px;">
+        <h1>UNIVERSITY OF CEBU</h1>
+        <p>College of Information & Computer Studies</p>
+        <h2>Sit-in Laboratory Session Report</h2>
+        <p id="print-timestamp" style="margin-top: 10px; font-weight: bold;"></p>
+    </div>
+
+    <nav>
+        <div class="logo">
+            <div class="logo-holder"></div>
+            <img src="images/uc.png" alt="UCLOGO" height="90px" width="90px">
+            <p class="title">CCS Sit-in Monitoring System</p>
+        </div>
+        <div class="links">
+            <a href="admin.html">Dashboard</a>
+            <a href="students.html">Students</a>
+            <a href="sit-in-records.html">Sit-in Records</a>
+            <a href="sitin-reports.html" class="active">Sit-in Reports</a>
+            <a href="feedback-reports.html">Feedback Reports</a>
+            <a href="" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="page-header">
+            <h1><i class="fa-solid fa-chart-column"></i> Student Sit-in Report Dashboard</h1>
+            <a href="admin.html" class="back-btn">Back to Dashboard</a>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Total Sit-in Sessions</h3>
+                <div class="number" id="metric-total">0</div>
+            </div>
+            <div class="metric-card active-sessions">
+                <h3>Active Sessions</h3>
+                <div class="number" id="metric-active">0</div>
+            </div>
+            <div class="metric-card completed">
+                <h3>Completed Sessions</h3>
+                <div class="number" id="metric-completed">0</div>
+            </div>
+        </div>
+
+        <!-- Filter Panel -->
+        <div class="filter-panel">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label for="search-input">Search Student</label>
+                    <input type="text" id="search-input" placeholder="Search by ID or Name..." oninput="filterRecords()">
+                </div>
+                <div class="filter-group">
+                    <label for="lab-filter">Laboratory</label>
+                    <select id="lab-filter" onchange="filterRecords()">
+                        <option value="">All Laboratories</option>
+                        <option value="Lab 524">Lab 524</option>
+                        <option value="Lab 526">Lab 526</option>
+                        <option value="Lab 528">Lab 528</option>
+                        <option value="Lab 530">Lab 530</option>
+                        <option value="Lab 542">Lab 542</option>
+                        <option value="Lab 544">Lab 544</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="purpose-filter">Purpose</label>
+                    <select id="purpose-filter" onchange="filterRecords()">
+                        <option value="">All Purposes</option>
+                        <option value="Java">Java</option>
+                        <option value="C++">C++</option>
+                        <option value="Python">Python</option>
+                        <option value="Web Development">Web Development</option>
+                        <option value="PHP">PHP</option>
+                        <option value="SQL">SQL</option>
+                        <option value="C#">C#</option>
+                        <option value="Android Studio">Android Studio</option>
+                        <option value="Networking">Networking</option>
+                        <option value="Others">Others</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="start-date">Start Date</label>
+                    <input type="date" id="start-date" onchange="filterRecords()">
+                </div>
+                <div class="filter-group">
+                    <label for="end-date">End Date</label>
+                    <input type="date" id="end-date" onchange="filterRecords()">
+                </div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="export-actions">
+                <button class="btn-export btn-csv" onclick="exportCSV()">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+                <button class="btn-export btn-excel" onclick="exportExcel()">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel
+                </button>
+                <button class="btn-export btn-print" onclick="triggerPrint()">
+                    <i class="fa-solid fa-print"></i> Print / Save PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student ID Number</th>
+                        <th>Student Name</th>
+                        <th>Laboratory</th>
+                        <th>PC Number</th>
+                        <th>Purpose</th>
+                        <th>Log In Time</th>
+                        <th>Log Out Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="reports-table-body">
+                    <tr><td colspan="9" style="text-align: center; color: #7f8c8d;">Loading sit-in sessions...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h2>Logout Confirmation</h2>
+            <p>Are you sure you want to log out?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-confirm">Yes, Logout</button>
+                <button id="cancel-logout" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allRecords = [];
+        let filteredRecords = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Verify Admin authentication on load
+                const authCheck = await fetch('/api/admin/stats', { credentials: 'include' });
+                if (authCheck.status === 401) {
+                    window.location.href = '/admin-login.html';
+                    return;
+                }
+                loadSitInReports();
+            } catch (error) {
+                console.error('Auth verification failed:', error);
+                window.location.href = '/admin-login.html';
+            }
+        });
+
+        // Load sit-in records
+        async function loadSitInReports() {
+            try {
+                const response = await fetch('/api/admin/sitin-records', {
+                    credentials: 'include'
+                });
+                allRecords = await response.json();
+                filteredRecords = [...allRecords];
+                
+                displayReports(filteredRecords);
+                updateMetrics(filteredRecords);
+            } catch (error) {
+                console.error('Error loading report data:', error);
+                document.getElementById('reports-table-body').innerHTML = 
+                    '<tr><td colspan="9" style="text-align: center; color: #e74c3c;">Failed to load report data.</td></tr>';
+            }
+        }
+
+        // Display rows in the table
+        function displayReports(records) {
+            const tbody = document.getElementById('reports-table-body');
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #7f8c8d;">No matching records found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = records.map(r => {
+                const dateObj = new Date(r.time_in);
+                const dateStr = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+                const loginTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const logoutTime = r.time_out ? new Date(r.time_out).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '-';
+                
+                return `
+                    <tr>
+                        <td style="font-weight: bold; color: #2c3e50;">${dateStr}</td>
+                        <td style="font-weight: bold; color: #1a5276;">${r.student_id}</td>
+                        <td>${r.student_name}</td>
+                        <td>${r.lab}</td>
+                        <td style="font-weight: bold; color: #2980b9;">${r.pc_number || '-'}</td>
+                        <td>${r.purpose}</td>
+                        <td style="color: #27ae60; font-weight: bold;">${loginTime}</td>
+                        <td style="color: ${r.time_out ? '#c0392b' : '#7f8c8d'}; font-weight: bold;">${logoutTime}</td>
+                        <td>
+                            <span class="status-badge ${r.time_out ? 'status-ended' : 'status-active'}">
+                                ${r.time_out ? 'Ended' : 'Active'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update metrics display
+        function updateMetrics(records) {
+            const total = records.length;
+            const active = records.filter(r => !r.time_out).length;
+            const completed = total - active;
+
+            document.getElementById('metric-total').textContent = total;
+            document.getElementById('metric-active').textContent = active;
+            document.getElementById('metric-completed').textContent = completed;
+        }
+
+        // Apply filters dynamically
+        function filterRecords() {
+            const search = document.getElementById('search-input').value.toLowerCase().trim();
+            const lab = document.getElementById('lab-filter').value;
+            const purpose = document.getElementById('purpose-filter').value;
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+
+            filteredRecords = allRecords.filter(r => {
+                // Search ID or Name
+                const matchesSearch = r.student_id.toLowerCase().includes(search) || 
+                                      r.student_name.toLowerCase().includes(search);
+                
+                // Lab Match
+                const matchesLab = !lab || r.lab === lab;
+
+                // Purpose Match
+                const matchesPurpose = !purpose || r.purpose === purpose;
+
+                // Date Matches
+                const recordDate = new Date(r.time_in).toISOString().split('T')[0];
+                const matchesStart = !startDate || recordDate >= startDate;
+                const matchesEnd = !endDate || recordDate <= endDate;
+
+                return matchesSearch && matchesLab && matchesPurpose && matchesStart && matchesEnd;
+            });
+
+            displayReports(filteredRecords);
+            updateMetrics(filteredRecords);
+        }
+
+        // Export to CSV
+        function exportCSV() {
+            if (filteredRecords.length === 0) {
+                alert('No records to export!');
+                return;
+            }
+
+            const headers = ['Date', 'Student ID', 'Student Name', 'Laboratory', 'PC Number', 'Purpose', 'Log In Time', 'Log Out Time', 'Status'];
+            const rows = filteredRecords.map(r => {
+                const dateObj = new Date(r.time_in);
+                const dateStr = dateObj.toLocaleDateString();
+                const loginTime = dateObj.toLocaleTimeString();
+                const logoutTime = r.time_out ? new Date(r.time_out).toLocaleTimeString() : '-';
+                const status = r.time_out ? 'Ended' : 'Active';
+
+                return [
+                    `"${dateStr}"`,
+                    `"${r.student_id}"`,
+                    `"${r.student_name.replace(/"/g, '""')}"`,
+                    `"${r.lab}"`,
+                    `"${r.pc_number || '-'}"`,
+                    `"${r.purpose.replace(/"/g, '""')}"`,
+                    `"${loginTime}"`,
+                    `"${logoutTime}"`,
+                    `"${status}"`
+                ];
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `UCLICS_Sitin_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Export to Excel
+        function exportExcel() {
+            if (filteredRecords.length === 0) {
+                alert('No records to export!');
+                return;
+            }
+
+            // Construct simple XLS tab-separated workbook format
+            const headers = ['Date', 'Student ID', 'Student Name', 'Laboratory', 'PC Number', 'Purpose', 'Log In Time', 'Log Out Time', 'Status'];
+            let excelData = headers.join('\t') + '\n';
+
+            filteredRecords.forEach(r => {
+                const dateObj = new Date(r.time_in);
+                const dateStr = dateObj.toLocaleDateString();
+                const loginTime = dateObj.toLocaleTimeString();
+                const logoutTime = r.time_out ? new Date(r.time_out).toLocaleTimeString() : '-';
+                const status = r.time_out ? 'Ended' : 'Active';
+
+                excelData += [
+                    dateStr,
+                    r.student_id,
+                    r.student_name,
+                    r.lab,
+                    r.pc_number || '-',
+                    r.purpose,
+                    loginTime,
+                    logoutTime,
+                    status
+                ].join('\t') + '\n';
+            });
+
+            const blob = new Blob([excelData], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `UCLICS_Sitin_Report_${new Date().toISOString().split('T')[0]}.xls`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Trigger native Print/Save to PDF flow
+        function triggerPrint() {
+            const timestamp = document.getElementById('print-timestamp');
+            const now = new Date();
+            timestamp.textContent = `Report generated on: ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}`;
+            window.print();
+        }
+
+        // Modal Logout
+        document.getElementById('logout-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('logout-modal').style.display = 'flex';
+        });
+
+        document.getElementById('confirm-logout').addEventListener('click', async function() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/admin-login.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+            }
+        });
+
+        document.getElementById('cancel-logout').addEventListener('click', function() {
+            document.getElementById('logout-modal').style.display = 'none';
+        });
+
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('logout-modal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

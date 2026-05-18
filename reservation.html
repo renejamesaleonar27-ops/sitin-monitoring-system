@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Reservation - Sit-in Monitoring System</title>
     <style>
         .reservation-container {
@@ -210,9 +212,28 @@
                 justify-content: flex-end;
             }
         }
+
+        .pc-btn.occupied-btn {
+            background: #e74c3c !important;
+            border-color: #c0392b !important;
+            color: white !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 1 !important;
+        }
+
+        .pc-btn.reserved-btn {
+            background: #e67e22 !important;
+            border-color: #d35400 !important;
+            color: white !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 1 !important;
+        }
     </style>
 </head>
-<body style="background-image: url(images/bg.jpg); background-size: cover; background-position: center; height: 100vh;">
+
+<body class="global-bg">
     <nav>
         <div class="logo">
             <div class="logo-holder"></div>
@@ -223,7 +244,7 @@
         <div class="links">
             <a href="notification.html">Notification</a>
             <a href="main.html">Home</a>
-            <a href="" id="edit-profile-link">Edit Profile</a>
+            <a href="main.html?edit=true" id="edit-profile-link">Edit Profile</a>
             <a href="history.html">History</a>
             <a href="reservation.html" class="active">Reservation</a>
             <a href="" id="logout-link">Logout</a>
@@ -272,6 +293,49 @@
                         <input type="time" id="preferred_time" name="preferred_time">
                     </div>
                 </div>
+
+                <!-- Laboratory Installed Software Info Row -->
+                <div class="form-row" id="software-info-row" style="display: none; margin-top: 15px; margin-bottom: 15px;">
+                    <div class="form-group" style="width: 100%;">
+                        <label style="font-weight: 600; color: #1a5276;"><i class="fa-solid fa-laptop-code"></i> Software Installed in <span id="software-lab-title">Lab</span></label>
+                        <div id="software-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: rgba(0,0,0,0.02); padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-top: 5px;">
+                            <!-- Software list items will be generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row" style="grid-template-columns: 1fr; margin-top: 15px;">
+                    <div class="form-group">
+                        <label style="margin-bottom: 5px;">Select Preferred PC</label>
+
+                        <!-- Grid Legend -->
+                        <div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 12px; font-weight: bold;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div
+                                    style="width: 12px; height: 12px; background: #3276f2; border: 1px solid #ccc; border-radius: 3px;">
+                                </div>
+                                <span>Available</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div style="width: 12px; height: 12px; background: #e74c3c; border-radius: 3px;"></div>
+                                <span style="color: #c0392b;">Occupied</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div style="width: 12px; height: 12px; background: #e67e22; border-radius: 3px;"></div>
+                                <span style="color: #d35400;">Reserved</span>
+                            </div>
+                        </div>
+
+                        <div id="pc-grid"
+                            style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; max-width: 420px; margin: 10px 0; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px; border: 1px solid #eee;">
+                            <!-- PC buttons will be generated dynamically -->
+                        </div>
+                        <input type="hidden" id="pc_number" name="pc_number" required>
+                        <div id="selected-pc-display" style="font-weight: bold; color: #1a5276; margin-top: 5px;">No PC
+                            selected (Please select a Lab and Date, then click a PC above)</div>
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-submit">Create Reservation</button>
             </form>
         </div>
@@ -300,12 +364,233 @@
     <script>
         let reservations = [];
         let reservationToCancel = null;
+        let selectedPcBtn = null;
 
         // Load user reservations on page load
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
             loadReservations();
             loadStudentInfo();
+
+            // Generate PC grid (7 rows, 7 PCs per row)
+            const pcGrid = document.getElementById('pc-grid');
+            const pcNumberInput = document.getElementById('pc_number');
+            const selectedPcDisplay = document.getElementById('selected-pc-display');
+
+            for (let row = 1; row <= 7; row++) {
+                for (let col = 1; col <= 7; col++) {
+                    const pcNum = (row - 1) * 7 + col;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'pc-btn';
+                    btn.textContent = pcNum;
+                    btn.title = `Row ${row}, PC ${col} (PC #${pcNum})`;
+                    btn.dataset.row = row;
+                    btn.dataset.col = col;
+                    btn.dataset.pcnum = pcNum;
+                    btn.style.cssText = `
+                        padding: 10px 5px;
+                        background: #f8f9fa;
+                        border: 1px solid #ccc;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        font-weight: bold;
+                        font-size: 12px;
+                        transition: all 0.15s ease;
+                        text-align: center;
+                    `;
+
+                    // Add hover effect
+                    btn.addEventListener('mouseover', function () {
+                        if (selectedPcBtn !== btn && !btn.disabled) {
+                            btn.style.background = '#eaf2f8';
+                            btn.style.borderColor = '#1a5276';
+                        }
+                    });
+                    btn.addEventListener('mouseout', function () {
+                        if (selectedPcBtn !== btn && !btn.disabled) {
+                            btn.style.background = '#f8f9fa';
+                            btn.style.borderColor = '#ccc';
+                        }
+                    });
+
+                    btn.addEventListener('click', function () {
+                        if (btn.disabled) return;
+
+                        if (selectedPcBtn) {
+                            // Restore previous button style
+                            selectedPcBtn.style.background = '#f8f9fa';
+                            selectedPcBtn.style.borderColor = '#ccc';
+                            selectedPcBtn.style.color = '#333';
+                            selectedPcBtn.style.boxShadow = 'none';
+                        }
+
+                        // Set new selected button
+                        selectedPcBtn = btn;
+                        btn.style.background = '#1a5276';
+                        btn.style.borderColor = '#154360';
+                        btn.style.color = 'white';
+                        btn.style.boxShadow = '0 0 10px rgba(26, 82, 118, 0.4)';
+
+                        const pcLabel = `Row ${row} - PC ${col} (PC #${pcNum})`;
+                        pcNumberInput.value = pcLabel;
+                        selectedPcDisplay.textContent = `Selected: ${pcLabel}`;
+                    });
+
+                    pcGrid.appendChild(btn);
+                }
+            }
+
+            // Hook occupancy updates to lab/date selection
+            const labSelect = document.getElementById('lab');
+            const dateInput = document.getElementById('preferred_date');
+
+            labSelect.addEventListener('change', () => {
+                updatePcOccupancy();
+                updateLabSoftware();
+            });
+            dateInput.addEventListener('change', updatePcOccupancy);
+
+            // Set date min to today's date
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.min = `${yyyy}-${mm}-${dd}`;
+
+            // Check global reservation system status
+            try {
+                const settingsResponse = await fetch('/api/settings/reservations');
+                const settingsData = await settingsResponse.json();
+                if (!settingsData.enabled) {
+                    // Disable form and show notice
+                    const messageArea = document.getElementById('message-area');
+                    messageArea.innerHTML = `
+                        <div style="background-color: #fdf2f2; color: #9b1c1c; border: 1px solid #f8b4b4; padding: 15px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; text-align: center; font-size: 15px;">
+                            ⚠️ Workstation reservation is currently disabled by the administrator.
+                        </div>
+                    `;
+                    // Disable all form elements
+                    const formElements = document.getElementById('reservation-form').elements;
+                    for (let i = 0; i < formElements.length; i++) {
+                        formElements[i].disabled = true;
+                    }
+                    // Disable PC buttons in grid
+                    document.querySelectorAll('.pc-btn').forEach(btn => btn.disabled = true);
+                }
+            } catch (err) {
+                console.error('Error checking reservation settings:', err);
+            }
         });
+
+        // Function to fetch and display laboratory software list
+        async function updateLabSoftware() {
+            const lab = document.getElementById('lab').value;
+            const container = document.getElementById('software-list-container');
+            const row = document.getElementById('software-info-row');
+            const title = document.getElementById('software-lab-title');
+
+            if (!lab) {
+                row.style.display = 'none';
+                return;
+            }
+
+            title.textContent = lab;
+            row.style.display = 'block';
+            container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching installed software list...</p>';
+
+            try {
+                const response = await fetch(`/api/software?lab=${encodeURIComponent(lab)}`);
+                const software = await response.json();
+
+                if (software.length > 0) {
+                    container.innerHTML = software.map(s => `
+                        <div style="background: white; border: 1px solid #ddd; padding: 10px 12px; border-radius: 6px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s ease;">
+                            <div style="background: #eaf2f8; color: #1a5276; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;">
+                                <i class="fa-solid fa-laptop-code"></i>
+                            </div>
+                            <div style="overflow: hidden;">
+                                <div style="font-weight: 600; font-size: 13px; color: #333; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="${s.software_name}">${s.software_name}</div>
+                                <div style="font-size: 11px; color: #777;">Version: ${s.version || 'N/A'}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777; font-size: 13px;">No registered software information available for this laboratory.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching software list:', error);
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #e74c3c; font-size: 13px;">Failed to load software information.</p>';
+            }
+        }
+
+        // Function to deselect current PC
+        function deselectCurrentPc() {
+            selectedPcBtn = null;
+            document.getElementById('pc_number').value = '';
+            document.getElementById('selected-pc-display').textContent = 'No PC selected (Please click an available PC above)';
+        }
+
+        // Dynamically fetch and display PC occupancy
+        async function updatePcOccupancy() {
+            const lab = document.getElementById('lab').value;
+            const date = document.getElementById('preferred_date').value;
+            const pcGrid = document.getElementById('pc-grid');
+
+            if (!lab || !date || !pcGrid) return;
+
+            try {
+                const response = await fetch(`/api/student/pc-occupancy?lab=${encodeURIComponent(lab)}&date=${encodeURIComponent(date)}`);
+                const data = await response.json();
+
+                const reserved = data.reserved || [];
+                const occupied = data.occupied || [];
+
+                const buttons = pcGrid.querySelectorAll('.pc-btn');
+                buttons.forEach(btn => {
+                    const row = btn.dataset.row;
+                    const col = btn.dataset.col;
+                    const pcNum = btn.dataset.pcnum;
+                    const label = `Row ${row} - PC ${col} (PC #${pcNum})`;
+
+                    // Reset custom button classes
+                    btn.classList.remove('occupied-btn', 'reserved-btn');
+
+                    if (occupied.includes(label)) {
+                        btn.classList.add('occupied-btn');
+                        btn.title = `Row ${row}, PC ${col} (PC #${pcNum}) - Currently Occupied (Active Sit-in)`;
+
+                        if (selectedPcBtn === btn) {
+                            deselectCurrentPc();
+                        }
+                    } else if (reserved.includes(label)) {
+                        btn.classList.add('reserved-btn');
+                        btn.title = `Row ${row}, PC ${col} (PC #${pcNum}) - Reserved`;
+
+                        if (selectedPcBtn === btn) {
+                            deselectCurrentPc();
+                        }
+                    } else {
+                        btn.disabled = false;
+                        btn.style.cursor = 'pointer';
+
+                        if (selectedPcBtn === btn) {
+                            btn.style.background = '#1a5276';
+                            btn.style.borderColor = '#154360';
+                            btn.style.color = 'white';
+                            btn.style.boxShadow = '0 0 10px rgba(26, 82, 118, 0.4)';
+                        } else {
+                            btn.style.background = '#f8f9fa';
+                            btn.style.borderColor = '#ccc';
+                            btn.style.color = '#333';
+                            btn.style.boxShadow = 'none';
+                        }
+                        btn.title = `Row ${row}, PC ${col} (PC #${pcNum})`;
+                    }
+                });
+            } catch (err) {
+                console.error('Error fetching occupancy:', err);
+            }
+        }
 
         // Load student info
         async function loadStudentInfo() {
@@ -359,6 +644,7 @@
                         <div class="reservation-meta">
                             <span> Date: ${new Date(r.preferred_date).toLocaleDateString()}</span>
                             ${r.preferred_time ? `<span> Time: ${r.preferred_time}</span>` : ''}
+                            ${r.pc_number ? `<span> PC: <strong>${r.pc_number}</strong></span>` : ''}
                             <span> Status: <span class="status-badge">${r.status}</span></span>
                             ${r.admin_notes ? `<span> Note: ${r.admin_notes}</span>` : ''}
                             <span> Created: ${new Date(r.created_at).toLocaleString()}</span>
@@ -375,13 +661,19 @@
         }
 
         // Handle reservation form submission
-        document.getElementById('reservation-form').addEventListener('submit', async function(e) {
+        document.getElementById('reservation-form').addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const purpose = document.getElementById('purpose').value;
             const lab = document.getElementById('lab').value;
             const preferred_date = document.getElementById('preferred_date').value;
             const preferred_time = document.getElementById('preferred_time').value;
+            const pc_number = document.getElementById('pc_number').value;
+
+            if (!pc_number) {
+                showMessage('Error', 'Please select a preferred PC from the grid.');
+                return;
+            }
 
             // Validate date is in the future
             const selectedDate = new Date(preferred_date);
@@ -396,7 +688,7 @@
                 const response = await fetch('/api/student/reservations', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ purpose, lab, preferred_date, preferred_time })
+                    body: JSON.stringify({ purpose, lab, pc_number, preferred_date, preferred_time })
                 });
 
                 const data = await response.json();
@@ -404,6 +696,16 @@
                 if (response.ok && data.success) {
                     showMessage('Success', 'Reservation created successfully!');
                     document.getElementById('reservation-form').reset();
+                    // Reset selected PC button highlight
+                    if (selectedPcBtn) {
+                        selectedPcBtn.style.background = '#f8f9fa';
+                        selectedPcBtn.style.borderColor = '#ccc';
+                        selectedPcBtn.style.color = '#333';
+                        selectedPcBtn.style.boxShadow = 'none';
+                        selectedPcBtn = null;
+                    }
+                    document.getElementById('pc_number').value = '';
+                    document.getElementById('selected-pc-display').textContent = 'No PC selected (Please click one above)';
                     loadReservations();
                 } else {
                     showMessage('Error', data.error || 'Failed to create reservation');
@@ -421,7 +723,7 @@
         }
 
         // Confirm cancel
-        document.getElementById('confirm-cancel').addEventListener('click', async function() {
+        document.getElementById('confirm-cancel').addEventListener('click', async function () {
             if (reservationToCancel) {
                 try {
                     const response = await fetch(`/api/student/reservations/${reservationToCancel}/cancel`, {
@@ -447,7 +749,7 @@
         document.getElementById('dont-cancel').addEventListener('click', closeCancelModal);
 
         // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
+        window.addEventListener('click', function (e) {
             const modal = document.getElementById('cancel-modal');
             if (e.target === modal) {
                 closeCancelModal();
@@ -505,19 +807,19 @@
 
     <script>
         // Handle logout - show confirmation modal
-        document.getElementById('logout-link').addEventListener('click', function(e) {
+        document.getElementById('logout-link').addEventListener('click', function (e) {
             e.preventDefault();
             document.getElementById('logout-modal').style.display = 'flex';
         });
 
         // Confirm logout
-        document.getElementById('confirm-logout').addEventListener('click', async function() {
+        document.getElementById('confirm-logout').addEventListener('click', async function () {
             try {
                 await fetch('/api/logout', { method: 'POST' });
                 document.getElementById('logout-modal').style.display = 'none';
                 document.getElementById('logout-success-modal').style.display = 'flex';
 
-                document.getElementById('logout-ok-btn').addEventListener('click', function() {
+                document.getElementById('logout-ok-btn').addEventListener('click', function () {
                     window.location.href = '/login.html';
                 });
 
@@ -531,12 +833,12 @@
         });
 
         // Cancel logout
-        document.getElementById('cancel-logout').addEventListener('click', function() {
+        document.getElementById('cancel-logout').addEventListener('click', function () {
             document.getElementById('logout-modal').style.display = 'none';
         });
 
         // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
+        window.addEventListener('click', function (e) {
             const modal = document.getElementById('logout-modal');
             if (e.target === modal) {
                 modal.style.display = 'none';
@@ -544,4 +846,5 @@
         });
     </script>
 </body>
+
 </html>

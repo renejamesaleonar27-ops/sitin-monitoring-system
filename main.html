@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <title>Sit-in Monitoring System</title>
 </head>
-<body style="background-image: url(images/bg.jpg);
-background-size: cover;
-background-position: 100%; height: 100vh;">
-     <nav>
+
+<body class="global-bg">
+    <nav>
         <div class="logo">
             <div class="logo-holder"></div>
-            <img src="images/uc.png" alt="UCLOGO"
-            height="90px"width = "90px">
+            <img src="images/uc.png" alt="UCLOGO" height="90px" width="90px">
             <P class="title">Dashboard
         </div>
-                
+
 
         <div class="links">
-            <a href="notification.html">Notification<span id="notif-badge" style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
-            <a href="index.html">Home</a>
+            <a href="notification.html">Notification<span id="notif-badge"
+                    style="display:none; background:#e74c3c; color:white; padding:2px 6px; border-radius:10px; font-size:12px; margin-left:5px;">0</span></a>
             <a href="" id="edit-profile-link">Edit Profile</a>
             <a href="sit-in-summary.html">Sit-In Summary</a>
             <a href="sessions.html">Sessions</a>
@@ -34,19 +34,19 @@ background-position: 100%; height: 100vh;">
         <div class="student-info">
             <h1>Student Information</h1>
             <div class="stud-prof">
-                    <img id="dashboard-profile-pic" src="images/profile.webp " alt="stud-prof">
+                <img id="dashboard-profile-pic" src="images/profile.webp " alt="stud-prof">
             </div>
-<div class="info">
-            <p id="student-name"><span>👤Name:</span> Loading...</p>
-            <p id="student-course"><span>🎓Course:</span> Loading...</p>
-            <p id="student-year"><span>👤Year:</span> Loading...</p>
-            <p id="student-email"><span>✉️Email:</span> Loading...</p>
-            <p id="student-address"><span>🏠Address:</span> Loading...</p>
-            <p id="student-sessions"><span>⏳Session:</span> Loading...</p>
-            <p id="student-sit-in-hours"><span>⏰Total Sit-in Hours in Total:</span> Loading...</p>
-            <p id="avg-session-duration"><span>⏱️Average Session Duration:</span> Loading...</p>
-            <p id="longest-session"><span>🏆Longest Session Hours Been Use:</span> Loading...</p>
-        </div>
+            <div class="info">
+                <p id="student-name"><span><i class="fa-solid fa-user"></i> Name:</span> Loading...</p>
+                <p id="student-course"><span><i class="fa-solid fa-graduation-cap"></i> Course:</span> Loading...</p>
+                <p id="student-year"><span><i class="fa-solid fa-calendar-days"></i> Year:</span> Loading...</p>
+                <p id="student-email"><span><i class="fa-solid fa-envelope"></i> Email:</span> Loading...</p>
+                <p id="student-address"><span><i class="fa-solid fa-house"></i> Address:</span> Loading...</p>
+                <p id="student-sessions"><span><i class="fa-solid fa-hourglass-half"></i> Session:</span> Loading...</p>
+                <p id="student-sit-in-hours"><span><i class="fa-solid fa-clock"></i> Total Sit-in Hours in Total:</span> Loading...</p>
+                <p id="avg-session-duration"><span><i class="fa-solid fa-stopwatch"></i> Average Session Duration:</span> Loading...</p>
+                <p id="longest-session"><span><i class="fa-solid fa-trophy"></i> Longest Session Hours Been Use:</span> Loading...</p>
+            </div>
         </div>
 
         <div class="announcement">
@@ -54,32 +54,35 @@ background-position: 100%; height: 100vh;">
             <div id="announcements-container">
                 <div class="announcement-card">
                     <div class="date"></div>
-                    
+
                 </div>
                 <div class="announcement-card">
                     <div class="date"></div>
-                    
+
                 </div>
                 <div class="announcement-card">
                     <div class="date"></div>
-                    
+
                 </div>
                 <div class="announcement-card">
                     <div class="date"> </div>
-                    
+
                 </div>
             </div>
         </div>
 
-<div class="rules-reg">
+        <div class="rules-reg">
             <h1>Rules & Regulations</h1>
             <ul class="rules-list">
                 <h4>University of Cebu</h4>
                 <h5>COLLEGE OF INFORMATION & COMPUTER STUDIES
                     LABORATORY RULES AND REGULATIONS</h5>
-                <li><span class="rule-number">1</span> Maintain silence, proper decorum and discipline inside the laboratory. Mobile phones and other personal pieces of equipment must be switched off.</li>
-                <li><span class="rule-number">2</span> Games are not allowed inside the lab. This includes computer-related games, card games and other games that may disturb the operation of the lab.</li>
-                <li><span class="rule-number">3</span> Surfing the Internet is allowed only with the permission of the instructor. Downloading and installing of the software strictly prohibited.</li>
+                <li><span class="rule-number">1</span> Maintain silence, proper decorum and discipline inside the
+                    laboratory. Mobile phones and other personal pieces of equipment must be switched off.</li>
+                <li><span class="rule-number">2</span> Games are not allowed inside the lab. This includes
+                    computer-related games, card games and other games that may disturb the operation of the lab.</li>
+                <li><span class="rule-number">3</span> Surfing the Internet is allowed only with the permission of the
+                    instructor. Downloading and installing of the software strictly prohibited.</li>
 
 
             </ul>
@@ -116,7 +119,8 @@ background-position: 100%; height: 100vh;">
             <h2>Edit Profile</h2>
             <form id="edit-profile-form">
                 <div class="profile-pic-upload">
-                    <img id="profile-preview" src="images/makoysirkol.png" alt="Profile Preview" class="profile-preview">
+                    <img id="profile-preview" src="images/profile.webp" alt="Profile Preview"
+                        class="profile-preview">
                     <label for="profile-picture" class="upload-btn">Change Photo</label>
                     <input type="file" id="profile-picture" name="profilePicture" accept="image/*">
                 </div>
@@ -150,7 +154,7 @@ background-position: 100%; height: 100vh;">
     <script src="script.js"></script>
     <script>
         // Fetch current user data and announcements on page load
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', async function () {
             try {
                 const response = await fetch('/api/current-user');
                 if (response.status === 401) {
@@ -158,9 +162,9 @@ background-position: 100%; height: 100vh;">
                     window.location.href = '/login.html';
                     return;
                 }
-                
-const user = await response.json();
-                
+
+                const user = await response.json();
+
                 // Update the DOM with user data
                 const fullName = `${user.firstname || ''} ${user.middlename ? user.middlename + ' ' : ''}${user.lastname || ''}`;
                 document.getElementById('student-name').innerHTML = `<span>👤Name:</span> ${fullName}`;
@@ -172,12 +176,10 @@ const user = await response.json();
                 document.getElementById('student-sit-in-hours').innerHTML = `<span>⏰Total Sit-in Hours in Total:</span> ${user.totalSitInHours || 0} hr`;
                 document.getElementById('avg-session-duration').innerHTML = `<span>⏱️Average Session Duration:</span> ${user.avgSessionDuration || 0} hr`;
                 document.getElementById('longest-session').innerHTML = `<span>🏆Longest Session Hours Been Use:</span> ${user.longestSession || 0} hr`;
-                
+
                 // Update profile picture on dashboard
                 const profilePic = document.getElementById('dashboard-profile-pic');
-                if (user.profile_picture) {
-                    profilePic.src = user.profile_picture;
-                }
+                profilePic.src = user.profile_picture || 'images/profile.webp';
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
@@ -218,25 +220,31 @@ const user = await response.json();
             } catch (error) {
                 console.error('Error fetching notifications count:', error);
             }
+
+            // Auto open edit profile if query param is present
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('edit') === 'true') {
+                document.getElementById('edit-profile-link').click();
+            }
         });
 
         // Handle logout - show confirmation modal
-        document.getElementById('logout-link').addEventListener('click', function(e) {
+        document.getElementById('logout-link').addEventListener('click', function (e) {
             e.preventDefault();
             document.getElementById('logout-modal').style.display = 'flex';
         });
 
         // Confirm logout
-        document.getElementById('confirm-logout').addEventListener('click', async function() {
+        document.getElementById('confirm-logout').addEventListener('click', async function () {
             try {
                 await fetch('/api/logout', { method: 'POST' });
                 document.getElementById('logout-modal').style.display = 'none';
                 document.getElementById('logout-success-modal').style.display = 'flex';
-                
-                document.getElementById('logout-ok-btn').addEventListener('click', function() {
+
+                document.getElementById('logout-ok-btn').addEventListener('click', function () {
                     window.location.href = '/login.html';
                 });
-                
+
                 // Auto-redirect after 2 seconds if user doesn't click
                 setTimeout(() => {
                     window.location.href = '/login.html';
@@ -247,12 +255,12 @@ const user = await response.json();
         });
 
         // Cancel logout
-        document.getElementById('cancel-logout').addEventListener('click', function() {
+        document.getElementById('cancel-logout').addEventListener('click', function () {
             document.getElementById('logout-modal').style.display = 'none';
         });
 
         // Close modal when clicking outside
-        window.addEventListener('click', function(e) {
+        window.addEventListener('click', function (e) {
             const modal = document.getElementById('logout-modal');
             if (e.target === modal) {
                 modal.style.display = 'none';
@@ -261,9 +269,9 @@ const user = await response.json();
 
         // Handle Edit Profile - open modal and populate fields
         let currentUserData = null;
-        document.getElementById('edit-profile-link').addEventListener('click', async function(e) {
+        document.getElementById('edit-profile-link').addEventListener('click', async function (e) {
             e.preventDefault();
-            
+
             // Fetch current user data
             try {
                 const response = await fetch('/api/current-user');
@@ -272,22 +280,18 @@ const user = await response.json();
                     return;
                 }
                 currentUserData = await response.json();
-                
+
                 // Populate form fields
                 document.getElementById('edit-firstname').value = currentUserData.firstname || '';
                 document.getElementById('edit-middlename').value = currentUserData.middlename || '';
                 document.getElementById('edit-lastname').value = currentUserData.lastname || '';
                 document.getElementById('edit-address').value = currentUserData.address || '';
                 document.getElementById('edit-email').value = currentUserData.email || '';
-                
+
                 // Set profile picture preview
                 const profilePreview = document.getElementById('profile-preview');
-                if (currentUserData.profile_picture) {
-                    profilePreview.src = currentUserData.profile_picture;
-                } else {
-                    profilePreview.src = 'images/makoysirkol.png';
-                }
-                
+                profilePreview.src = currentUserData.profile_picture || 'images/profile.webp';
+
                 document.getElementById('edit-profile-modal').style.display = 'flex';
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -295,11 +299,11 @@ const user = await response.json();
         });
 
         // Profile picture preview
-        document.getElementById('profile-picture').addEventListener('change', function(e) {
+        document.getElementById('profile-picture').addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = function (e) {
                     document.getElementById('profile-preview').src = e.target.result;
                 };
                 reader.readAsDataURL(file);
@@ -307,32 +311,32 @@ const user = await response.json();
         });
 
         // Handle Edit Profile form submission
-        document.getElementById('edit-profile-form').addEventListener('submit', async function(e) {
+        document.getElementById('edit-profile-form').addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const formData = new FormData();
             formData.append('firstname', document.getElementById('edit-firstname').value || '');
             formData.append('middlename', document.getElementById('edit-middlename').value || '');
             formData.append('lastname', document.getElementById('edit-lastname').value || '');
             formData.append('address', document.getElementById('edit-address').value || '');
             formData.append('email', document.getElementById('edit-email').value || '');
-            
+
             const profilePicInput = document.getElementById('profile-picture');
             if (profilePicInput.files && profilePicInput.files[0]) {
                 formData.append('profilePicture', profilePicInput.files[0]);
             }
-            
+
             try {
                 const response = await fetch('/api/profile', {
                     method: 'PUT',
                     body: formData
                 });
-                
+
                 const result = await response.json();
                 if (response.ok) {
                     alert('Profile updated successfully!');
                     document.getElementById('edit-profile-modal').style.display = 'none';
-                    
+
                     // Refresh user data display
                     const firstName = document.getElementById('edit-firstname').value || '';
                     const middleName = document.getElementById('edit-middlename').value || '';
@@ -340,11 +344,11 @@ const user = await response.json();
                     const fullName = `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`;
                     const email = document.getElementById('edit-email').value || '';
                     const address = document.getElementById('edit-address').value || '';
-                    
+
                     document.getElementById('student-name').innerHTML = `<span>👤Name:</span> ${fullName}`;
                     document.getElementById('student-email').innerHTML = `<span>✉️Email:</span> ${email}`;
                     document.getElementById('student-address').innerHTML = `<span>🏠Address:</span> ${address || 'N/A'}`;
-                    
+
                     // Update profile picture on dashboard if changed
                     if (result.profile_picture) {
                         document.querySelector('.stud-prof img').src = result.profile_picture;
@@ -359,17 +363,18 @@ const user = await response.json();
         });
 
         // Cancel edit profile
-        document.getElementById('cancel-edit-profile').addEventListener('click', function() {
+        document.getElementById('cancel-edit-profile').addEventListener('click', function () {
             document.getElementById('edit-profile-modal').style.display = 'none';
         });
 
         // Close edit profile modal when clicking outside
-        window.addEventListener('click', function(e) {
+        window.addEventListener('click', function (e) {
             const modal = document.getElementById('edit-profile-modal');
             if (e.target === modal) {
                 modal.style.display = 'none';
             }
         });
     </script>
-    </body>
+</body>
+
 </html>
