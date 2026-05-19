@@ -66,6 +66,27 @@
         .slider.round:before {
             border-radius: 50%;
         }
+
+        /* PC Control Button Styling to override global style.css button!important styles */
+        .pc-control-btn {
+            padding: 12px 5px !important;
+            color: white !important;
+            border-radius: 5px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            font-size: 13px !important;
+            transition: all 0.2s ease !important;
+            text-align: center !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+        }
+        .pc-control-btn.enabled-pc {
+            background: #3498db !important;
+            border: 1px solid #2980b9 !important;
+        }
+        .pc-control-btn.disabled-pc {
+            background: #e74c3c !important;
+            border: 1px solid #c0392b !important;
+        }
     </style>
 </head>
 <body  class="global-bg">
@@ -89,6 +110,7 @@
             <a href="" onclick="showReservationsModal()">Reservation</a>
             <a href="" onclick="showNotificationsModal()">Notifications</a>
             <a href="" onclick="showSoftwareModal(); return false;"><i class="fa-solid fa-laptop-code"></i> Manage Software</a>
+            <a href="" onclick="showPcControlModal(); return false;"><i class="fa-solid fa-desktop"></i> PC Control</a>
             <a href="" id="logout-link">Logout</a>
             
             
@@ -159,7 +181,8 @@
                 <!-- Dynamic Profile Picture Preview -->
                 <div id="sitin-profile-container" style="display: none; text-align: center; margin-bottom: 20px;">
                     <img id="sitin-profile-pic" src="images/profile.webp" 
-                         style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #1a5276; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                          style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #1a5276; box-shadow: 0 4px 10px rgba(0,0,0,0.15);"
+                          onerror="this.src='images/profile.webp'">
                 </div>
 
                 <form id="sitin-form">
@@ -406,6 +429,54 @@
             </div>
         </div>
 
+        <!-- PC Control Modal -->
+        <div id="pc-control-modal" class="modal">
+            <div class="modal-content" style="max-width: 600px;">
+                <h2><i class="fa-solid fa-desktop"></i> Laboratory PC Control</h2>
+                <p style="color: #666; font-size: 13px; margin-bottom: 20px;">
+                    Enable or disable individual workstations in each laboratory. Disabled PCs cannot be selected by students for reservation or by administrators for manual sit-in.
+                </p>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="pc-control-lab" style="font-weight: bold; color: #1a5276;">Select Laboratory</label>
+                    <select id="pc-control-lab" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 15px;">
+                        <option value="">-- Choose Laboratory --</option>
+                        <option value="Lab 524">Lab 524</option>
+                        <option value="Lab 526">Lab 526</option>
+                        <option value="Lab 528">Lab 528</option>
+                        <option value="Lab 530">Lab 530</option>
+                        <option value="Lab 542">Lab 542</option>
+                        <option value="Lab 544">Lab 544</option>
+                    </select>
+                </div>
+
+                <!-- Grid Legend -->
+                <div id="pc-control-legend" style="display: none; gap: 15px; margin-bottom: 10px; font-size: 12px; font-weight: bold;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 12px; height: 12px; background: #3498db; border-radius: 3px;"></div>
+                        <span style="color: #3498db;">Active / Enabled</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div style="width: 12px; height: 12px; background: #e74c3c; border-radius: 3px;"></div>
+                        <span style="color: #e74c3c;">Disabled (Under Maintenance)</span>
+                    </div>
+                </div>
+
+                <!-- PC Grid -->
+                <div id="pc-control-grid" style="display: none; grid-template-columns: repeat(7, 1fr); gap: 8px; max-width: 100%; margin: 10px 0; background: rgba(0,0,0,0.02); padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                    <!-- PC status buttons generated dynamically -->
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #888;" id="pc-control-tip">
+                    (Click on any PC button to toggle its enabled/disabled status)
+                </div>
+
+                <div class="modal-buttons" style="margin-top: 20px;">
+                    <button type="button" class="btn-cancel" onclick="closePcControlModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Announcements -->
         <div class="panel">
             <h2><i class="fa-solid fa-bullhorn"></i> Announcements</h2>
@@ -609,7 +680,9 @@ loadStatistics();
                     document.getElementById('sitin-student-id').value = data.student.idnumber;
                     const fullName = `${data.student.firstname} ${data.student.middlename || ''} ${data.student.lastname}`.trim();
                     document.getElementById('sitin-student-name').value = fullName;
+                    document.getElementById('sitin-lab').value = '';
                     document.getElementById('sitin-pc').value = '';
+                    updateSitinPcDropdown();
                     
                     // Display profile picture
                     const profilePic = document.getElementById('sitin-profile-pic');
@@ -628,8 +701,10 @@ loadStatistics();
                     closeSearchModal();
                     document.getElementById('sitin-student-id').value = studentId;
                     document.getElementById('sitin-student-name').value = '';
+                    document.getElementById('sitin-lab').value = '';
                     document.getElementById('sitin-pc').value = '';
                     document.getElementById('sitin-sessions').value = 30;
+                    updateSitinPcDropdown();
                     
                     // Hide profile picture preview for manual entry
                     const profileContainer = document.getElementById('sitin-profile-container');
@@ -688,6 +763,7 @@ loadStatistics();
             document.getElementById('sitin-lab').value = '';
             document.getElementById('sitin-pc').value = '';
             document.getElementById('sitin-sessions').value = '30';
+            updateSitinPcDropdown();
             
             // Hide profile picture container for manual form entry
             const profileContainer = document.getElementById('sitin-profile-container');
@@ -1275,6 +1351,119 @@ loadStatistics();
             }
         });
 
+        // --- PC Control JS Logic ---
+        function showPcControlModal() {
+            document.getElementById('pc-control-modal').style.display = 'flex';
+            document.getElementById('pc-control-lab').value = '';
+            document.getElementById('pc-control-grid').style.display = 'none';
+            document.getElementById('pc-control-legend').style.display = 'none';
+            document.getElementById('pc-control-tip').style.display = 'none';
+        }
+
+        function closePcControlModal() {
+            document.getElementById('pc-control-modal').style.display = 'none';
+        }
+
+        // Listen for laboratory change in PC Control
+        document.getElementById('pc-control-lab').addEventListener('change', async function() {
+            const lab = this.value;
+            const grid = document.getElementById('pc-control-grid');
+            const legend = document.getElementById('pc-control-legend');
+            const tip = document.getElementById('pc-control-tip');
+
+            if (!lab) {
+                grid.style.display = 'none';
+                legend.style.display = 'none';
+                tip.style.display = 'none';
+                return;
+            }
+
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777;"><i class="fa-solid fa-spinner fa-spin"></i> Loading workstations status...</p>';
+            grid.style.display = 'grid';
+            legend.style.display = 'flex';
+            tip.style.display = 'block';
+
+            try {
+                // Fetch disabled PCs
+                const response = await fetch(`/api/pc-status?lab=${encodeURIComponent(lab)}`, { credentials: 'include' });
+                const statuses = await response.json();
+                const disabledPcs = statuses.filter(s => Number(s.enabled) === 0).map(s => s.pc_number);
+
+                grid.innerHTML = '';
+                for (let row = 1; row <= 7; row++) {
+                    for (let col = 1; col <= 7; col++) {
+                        const pcNum = (row - 1) * 7 + col;
+                        const label = `Row ${row} - PC ${col} (PC #${pcNum})`;
+                        const isEnabled = !disabledPcs.includes(label);
+
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = isEnabled ? 'pc-control-btn enabled-pc' : 'pc-control-btn disabled-pc';
+                        btn.textContent = pcNum;
+                        btn.title = `${label} - ${isEnabled ? 'Enabled' : 'Disabled'}`;
+                        btn.dataset.pc = label;
+                        btn.dataset.enabled = isEnabled ? '1' : '0';
+
+                        // Add hover effect
+                        btn.addEventListener('mouseover', function() {
+                            btn.style.filter = 'brightness(0.9)';
+                        });
+                        btn.addEventListener('mouseout', function() {
+                            btn.style.filter = 'none';
+                        });
+
+                        // Click to toggle
+                        btn.addEventListener('click', async function() {
+                            const currentlyEnabled = btn.dataset.enabled === '1';
+                            const nextEnabled = !currentlyEnabled;
+                            
+                            btn.style.opacity = '0.5';
+                            btn.disabled = true;
+
+                            try {
+                                const toggleRes = await fetch('/api/admin/toggle-pc', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        lab: lab,
+                                        pc_number: label,
+                                        enabled: nextEnabled
+                                    }),
+                                    credentials: 'include'
+                                });
+
+                                const resData = await toggleRes.json();
+                                if (toggleRes.ok && resData.success) {
+                                    btn.dataset.enabled = nextEnabled ? '1' : '0';
+                                    if (nextEnabled) {
+                                        btn.classList.remove('disabled-pc');
+                                        btn.classList.add('enabled-pc');
+                                    } else {
+                                        btn.classList.remove('enabled-pc');
+                                        btn.classList.add('disabled-pc');
+                                    }
+                                    btn.title = `${label} - ${nextEnabled ? 'Enabled' : 'Disabled'}`;
+                                } else {
+                                    alert(resData.error || 'Failed to update PC status');
+                                }
+                            } catch (e) {
+                                console.error('Error toggling PC status:', e);
+                                alert('Network error toggling PC status');
+                            } finally {
+                                btn.style.opacity = '1';
+                                btn.disabled = false;
+                            }
+                        });
+
+                        grid.appendChild(btn);
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading PC statuses:', err);
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #e74c3c;">Failed to load workstation configurations.</p>';
+            }
+        });
+
         // Close modal when clicking outside
         window.addEventListener('click', function(e) {
             const sitinModal = document.getElementById('sitin-modal');
@@ -1301,21 +1490,81 @@ loadStatistics();
             if (e.target === notificationsModal) {
                 closeNotificationsModal();
             }
+            const pcControlModal = document.getElementById('pc-control-modal');
+            if (e.target === pcControlModal) {
+                closePcControlModal();
+            }
         });
 
-        // Populate PC dropdown for manual sit-in creation
-        const sitinPcSelect = document.getElementById('sitin-pc');
-        if (sitinPcSelect) {
-            for (let row = 1; row <= 7; row++) {
-                for (let col = 1; col <= 7; col++) {
-                    const pcNum = (row - 1) * 7 + col;
-                    const option = document.createElement('option');
-                    option.value = `Row ${row} - PC ${col} (PC #${pcNum})`;
-                    option.textContent = `Row ${row} - PC ${col} (PC #${pcNum})`;
-                    sitinPcSelect.appendChild(option);
+        // Populate PC dropdown dynamically for manual sit-in creation
+        async function updateSitinPcDropdown() {
+            const lab = document.getElementById('sitin-lab').value;
+            const sitinPcSelect = document.getElementById('sitin-pc');
+            if (!sitinPcSelect) return;
+            
+            // Save selected value
+            const currentSelected = sitinPcSelect.value;
+            
+            // Clear existing options
+            sitinPcSelect.innerHTML = '<option value="">Select PC (Optional)</option>';
+            
+            if (!lab) {
+                // If no lab selected, populate standard 49 PCs
+                for (let row = 1; row <= 7; row++) {
+                    for (let col = 1; col <= 7; col++) {
+                        const pcNum = (row - 1) * 7 + col;
+                        const option = document.createElement('option');
+                        option.value = `Row ${row} - PC ${col} (PC #${pcNum})`;
+                        option.textContent = `Row ${row} - PC ${col} (PC #${pcNum})`;
+                        sitinPcSelect.appendChild(option);
+                    }
                 }
+                return;
+            }
+            
+            try {
+                // Fetch occupancy & disabled status for today
+                const todayStr = new Date().toISOString().split('T')[0];
+                const response = await fetch(`/api/student/pc-occupancy?lab=${encodeURIComponent(lab)}&date=${todayStr}`, { credentials: 'include' });
+                const data = await response.json();
+                
+                const occupied = data.occupied || [];
+                const reserved = data.reserved || [];
+                const disabled = data.disabled || [];
+                
+                for (let row = 1; row <= 7; row++) {
+                    for (let col = 1; col <= 7; col++) {
+                        const pcNum = (row - 1) * 7 + col;
+                        const label = `Row ${row} - PC ${col} (PC #${pcNum})`;
+                        const option = document.createElement('option');
+                        option.value = label;
+                        
+                        let suffix = '';
+                        if (disabled.includes(label)) {
+                            option.disabled = true;
+                            suffix = ' (Disabled - Under Maintenance)';
+                        } else if (occupied.includes(label)) {
+                            option.disabled = true;
+                            suffix = ' (Occupied)';
+                        } else if (reserved.includes(label)) {
+                            suffix = ' (Reserved)';
+                        }
+                        
+                        option.textContent = label + suffix;
+                        sitinPcSelect.appendChild(option);
+                    }
+                }
+                
+                // Restore selected value if it's still valid/enabled
+                if (currentSelected && !sitinPcSelect.querySelector(`option[value="${currentSelected}"]`)?.disabled) {
+                    sitinPcSelect.value = currentSelected;
+                }
+            } catch (err) {
+                console.error('Error populating PC dropdown:', err);
             }
         }
+
+        document.getElementById('sitin-lab').addEventListener('change', updateSitinPcDropdown);
     </script>
     <!-- Logout Confirmation Modal -->
     <div id="logout-modal" class="modal">

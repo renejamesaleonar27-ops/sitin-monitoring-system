@@ -34,7 +34,7 @@
         <div class="student-info">
             <h1>Student Information</h1>
             <div class="stud-prof">
-                <img id="dashboard-profile-pic" src="images/profile.webp " alt="stud-prof">
+                <img id="dashboard-profile-pic" src="images/profile.webp" alt="stud-prof" onerror="this.src='images/profile.webp'">
             </div>
             <div class="info">
                 <p id="student-name"><span><i class="fa-solid fa-user"></i> Name:</span> Loading...</p>
@@ -120,7 +120,7 @@
             <form id="edit-profile-form">
                 <div class="profile-pic-upload">
                     <img id="profile-preview" src="images/profile.webp" alt="Profile Preview"
-                        class="profile-preview">
+                        class="profile-preview" onerror="this.src='images/profile.webp'">
                     <label for="profile-picture" class="upload-btn">Change Photo</label>
                     <input type="file" id="profile-picture" name="profilePicture" accept="image/*">
                 </div>

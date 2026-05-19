@@ -230,6 +230,15 @@
             pointer-events: none !important;
             opacity: 1 !important;
         }
+
+        .pc-btn.disabled-btn {
+            background: #e74c3c !important;
+            border-color: #c0392b !important;
+            color: white !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            opacity: 0.7 !important;
+        }
     </style>
 </head>
 
@@ -323,6 +332,10 @@
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <div style="width: 12px; height: 12px; background: #e67e22; border-radius: 3px;"></div>
                                 <span style="color: #d35400;">Reserved</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <div style="width: 12px; height: 12px; background: #e74c3c; opacity: 0.7; border-radius: 3px;"></div>
+                                <span style="color: #c0392b; opacity: 0.7;">Disabled</span>
                             </div>
                         </div>
 
@@ -459,7 +472,7 @@
 
             // Check global reservation system status
             try {
-                const settingsResponse = await fetch('/api/settings/reservations');
+                const settingsResponse = await fetch('/api/settings/reservations', { credentials: 'include' });
                 const settingsData = await settingsResponse.json();
                 if (!settingsData.enabled) {
                     // Disable form and show notice
@@ -499,7 +512,7 @@
             container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching installed software list...</p>';
 
             try {
-                const response = await fetch(`/api/software?lab=${encodeURIComponent(lab)}`);
+                const response = await fetch(`/api/software?lab=${encodeURIComponent(lab)}`, { credentials: 'include' });
                 const software = await response.json();
 
                 if (software.length > 0) {
@@ -536,14 +549,19 @@
             const date = document.getElementById('preferred_date').value;
             const pcGrid = document.getElementById('pc-grid');
 
-            if (!lab || !date || !pcGrid) return;
+            if (!lab || !pcGrid) return;
 
             try {
-                const response = await fetch(`/api/student/pc-occupancy?lab=${encodeURIComponent(lab)}&date=${encodeURIComponent(date)}`);
+                let url = `/api/student/pc-occupancy?lab=${encodeURIComponent(lab)}`;
+                if (date) {
+                    url += `&date=${encodeURIComponent(date)}`;
+                }
+                const response = await fetch(url, { credentials: 'include' });
                 const data = await response.json();
 
                 const reserved = data.reserved || [];
                 const occupied = data.occupied || [];
+                const disabled = data.disabled || [];
 
                 const buttons = pcGrid.querySelectorAll('.pc-btn');
                 buttons.forEach(btn => {
@@ -553,9 +571,16 @@
                     const label = `Row ${row} - PC ${col} (PC #${pcNum})`;
 
                     // Reset custom button classes
-                    btn.classList.remove('occupied-btn', 'reserved-btn');
+                    btn.classList.remove('occupied-btn', 'reserved-btn', 'disabled-btn');
 
-                    if (occupied.includes(label)) {
+                    if (disabled.includes(label)) {
+                        btn.classList.add('disabled-btn');
+                        btn.title = `Row ${row}, PC ${col} (PC #${pcNum}) - Disabled (Under Maintenance)`;
+
+                        if (selectedPcBtn === btn) {
+                            deselectCurrentPc();
+                        }
+                    } else if (occupied.includes(label)) {
                         btn.classList.add('occupied-btn');
                         btn.title = `Row ${row}, PC ${col} (PC #${pcNum}) - Currently Occupied (Active Sit-in)`;
 
@@ -595,7 +620,7 @@
         // Load student info
         async function loadStudentInfo() {
             try {
-                const response = await fetch('/api/current-user');
+                const response = await fetch('/api/current-user', { credentials: 'include' });
                 if (response.status === 401) {
                     window.location.href = '/login.html';
                     return;
@@ -610,7 +635,7 @@
         // Load reservations
         async function loadReservations() {
             try {
-                const response = await fetch('/api/student/reservations');
+                const response = await fetch('/api/student/reservations', { credentials: 'include' });
                 if (response.status === 401) {
                     window.location.href = '/login.html';
                     return;

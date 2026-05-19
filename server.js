@@ -361,6 +361,16 @@ async function initDb() {
         )
     `);
 
+    // 13. pc_status table to manage enabled/disabled PCs in each lab
+    await run(`
+        CREATE TABLE IF NOT EXISTS pc_status (
+            lab TEXT,
+            pc_number TEXT,
+            enabled INTEGER DEFAULT 1,
+            PRIMARY KEY (lab, pc_number)
+        )
+    `);
+
     console.log('Database initialized successfully.');
 }
 
@@ -855,6 +865,13 @@ app.post('/api/admin/sitin', async (req, res) => {
     const { studentId, studentName, purpose, lab, pc_number, sessions: sitinSessions } = req.body;
     
     try {
+        if (pc_number) {
+            const pcStatus = await get('SELECT enabled FROM pc_status WHERE lab = ? AND pc_number = ?', [lab, pc_number]);
+            if (pcStatus && Number(pcStatus.enabled) === 0) {
+                return res.status(400).json({ error: 'This PC is currently disabled and unavailable for sit-in.' });
+            }
+        }
+
         await run(`INSERT INTO sitin_records (student_id, student_name, purpose, lab, pc_number, sessions, time_in) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [studentId, studentName, purpose, lab, pc_number || '', sitinSessions, getPhilippineTimeISO()]);
         res.json({ success: true, message: 'Sit-in record created successfully' });
@@ -1011,6 +1028,13 @@ app.post('/api/student/reservations', async (req, res) => {
         if (user) {
             const studentName = `${user.firstname} ${user.lastname}`;
 
+            if (pc_number) {
+                const pcStatus = await get('SELECT enabled FROM pc_status WHERE lab = ? AND pc_number = ?', [lab, pc_number]);
+                if (pcStatus && Number(pcStatus.enabled) === 0) {
+                    return res.status(400).json({ error: 'This PC is currently disabled and unavailable for reservation.' });
+                }
+            }
+
             await run(`INSERT INTO reservations (student_id, student_name, purpose, lab, pc_number, preferred_date, preferred_time, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 [user.idnumber, studentName, purpose, lab, pc_number || '', preferred_date, preferred_time || '', getPhilippineTimeISO()]);
@@ -1089,37 +1113,47 @@ app.get('/api/student/pc-occupancy', async (req, res) => {
     }
 
     const { lab, date } = req.query;
-    if (!lab || !date) {
-        return res.status(400).json({ error: 'Lab and Date are required' });
+    if (!lab) {
+        return res.status(400).json({ error: 'Lab is required' });
     }
 
     try {
         const reserved = [];
         const occupied = [];
+        const disabled = [];
 
-        const resRows = await all(`
-            SELECT pc_number FROM reservations 
-            WHERE lab = ? AND preferred_date = ? AND status IN ('accepted', 'pending') AND pc_number != '' AND pc_number IS NOT NULL
-        `, [lab, date]);
-        resRows.forEach(row => reserved.push(row.pc_number));
+        // Fetch disabled PCs for the lab
+        const disabledRows = await all(`
+            SELECT pc_number FROM pc_status 
+            WHERE lab = ? AND enabled = 0
+        `, [lab]);
+        disabledRows.forEach(row => disabled.push(row.pc_number));
 
-        const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
-        const formatter = new Intl.DateTimeFormat('en-US', options);
-        const parts = formatter.formatToParts(new Date());
-        const year = parts.find(p => p.type === 'year').value;
-        const month = parts.find(p => p.type === 'month').value;
-        const day = parts.find(p => p.type === 'day').value;
-        const todayStr = `${year}-${month}-${day}`;
+        if (date) {
+            const resRows = await all(`
+                SELECT pc_number FROM reservations 
+                WHERE lab = ? AND preferred_date = ? AND status IN ('accepted', 'pending') AND pc_number != '' AND pc_number IS NOT NULL
+            `, [lab, date]);
+            resRows.forEach(row => reserved.push(row.pc_number));
 
-        if (date === todayStr) {
-            const sitinRows = await all(`
-                SELECT pc_number FROM sitin_records 
-                WHERE lab = ? AND time_out IS NULL AND pc_number != '' AND pc_number IS NOT NULL
-            `, [lab]);
-            sitinRows.forEach(row => occupied.push(row.pc_number));
+            const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            const parts = formatter.formatToParts(new Date());
+            const year = parts.find(p => p.type === 'year').value;
+            const month = parts.find(p => p.type === 'month').value;
+            const day = parts.find(p => p.type === 'day').value;
+            const todayStr = `${year}-${month}-${day}`;
+
+            if (date === todayStr) {
+                const sitinRows = await all(`
+                    SELECT pc_number FROM sitin_records 
+                    WHERE lab = ? AND time_out IS NULL AND pc_number != '' AND pc_number IS NOT NULL
+                `, [lab]);
+                sitinRows.forEach(row => occupied.push(row.pc_number));
+            }
         }
 
-        res.json({ reserved, occupied });
+        res.json({ reserved, occupied, disabled });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -1527,6 +1561,44 @@ app.delete('/api/admin/software/:id', async (req, res) => {
 });
 
 // --- HTML Page Router (Fallback for serverless Vercel) ---
+// --- Workstation (PC) Status Endpoints ---
+app.get('/api/pc-status', async (req, res) => {
+    const { lab } = req.query;
+    try {
+        let rows;
+        if (lab) {
+            rows = await all('SELECT pc_number, enabled FROM pc_status WHERE lab = ?', [lab]);
+        } else {
+            rows = await all('SELECT lab, pc_number, enabled FROM pc_status');
+        }
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/toggle-pc', async (req, res) => {
+    const sessionId = req.cookies?.sessionId;
+    if (!sessionId || !sessions[sessionId] || !sessions[sessionId].isAdmin) {
+        return res.status(401).json({ error: 'Not authenticated as admin' });
+    }
+
+    const { lab, pc_number, enabled } = req.body;
+    if (!lab || !pc_number || enabled === undefined) {
+        return res.status(400).json({ error: 'Lab, PC number, and enabled status are required' });
+    }
+
+    try {
+        await run(`
+            INSERT OR REPLACE INTO pc_status (lab, pc_number, enabled)
+            VALUES (?, ?, ?)
+        `, [lab, pc_number, enabled ? 1 : 0]);
+        res.json({ success: true, message: 'PC status updated successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/:page.html', (req, res) => {
     const filePath = path.join(__dirname, `${req.params.page}.html`);
     if (fs.existsSync(filePath)) {

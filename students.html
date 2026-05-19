@@ -225,7 +225,8 @@
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <img src="${s.profile_picture || 'images/profile.webp'}" 
                                  alt="profile" 
-                                 style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 2px 4px rgba(0,0,0,0.1); vertical-align: middle;">
+                                 style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid #1a5276; box-shadow: 0 2px 4px rgba(0,0,0,0.1); vertical-align: middle;"
+                                 onerror="this.src='images/profile.webp'">
                             <span>${s.firstname} ${s.middlename || ''} ${s.lastname}</span>
                         </div>
                     </td>
